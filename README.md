@@ -6,7 +6,9 @@ Windows 10/11 风格的字母快速跳转 + az 布局拼音分组，为 [ArcMenu
 
 ## 功能演示
 
-TODO: 录制 10 秒演示 GIF（打开菜单 → All Apps → 点击字母标题 → 面板 → 跳转）放入本节。
+![Alphabet Jump List 演示](docs/demo.gif)
+
+*点击"所有应用"列表中的字母分组标题 → 弹出 A-Z 面板 → 点击目标字母 → 列表滚动到对应分组*
 
 ## 功能
 
