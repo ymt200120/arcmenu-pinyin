@@ -68,7 +68,7 @@ export function createPinyinIndex({cacheLimit = 4096} = {}) {
 
 /**
  * 依据分桶字母重排应用条目：
- * - 主键：分桶字母升序，'#' 固定最后；
+ * - 主键：分桶字母升序，'#' 固定最前（Windows 式，与跳转面板键位顺序一致）；
  * - 次键：同桶内 localeCompare(name, 'zh')（zh 排序：拉丁先于汉字，汉字按拼音）。
  *
  * @param {Array<{key: string, name: string}>} entries 应用条目（key 用于还原原对象）
@@ -84,9 +84,9 @@ export function sortEntriesByLetter(entries, letterForName) {
     decorated.sort((a, b) => {
         if (a.bucket !== b.bucket) {
             if (a.bucket === '#')
-                return 1;
-            if (b.bucket === '#')
                 return -1;
+            if (b.bucket === '#')
+                return 1;
             return a.bucket < b.bucket ? -1 : 1;
         }
         return a.name.localeCompare(b.name, 'zh');

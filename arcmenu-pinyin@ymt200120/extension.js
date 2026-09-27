@@ -27,7 +27,7 @@ import {
 } from './src/compat.js';
 import {evaluateResumption, RESUME_POSTPONE, RESUME_SKIP} from './src/integrationGuard.js';
 import {InjectionManager} from './src/injection.js';
-import {makeDisplayWrapper, makeSortWrapper} from './src/displayPatch.js';
+import {makeDisplayWrapper, makePopulateMenuWrapper, makeSortWrapper} from './src/displayPatch.js';
 import {createPinyinIndex} from './src/pinyinIndex.js';
 
 const TAG = '[arcmenu-pinyin]';
@@ -200,12 +200,15 @@ export default class ArcMenuPinyinExtension extends Extension {
         };
 
         const proto = audit.modules.baseMenuLayout.BaseMenuLayout.prototype;
+        const dialogProto = audit.modules.menuWidgets.BucketJumpListDialog.prototype;
         const okSort = this._injectionManager.overrideMethod(proto, '_createSortedAppsList',
             makeSortWrapper(ctx));
         const okDisplay = this._injectionManager.overrideMethod(proto, '_displayAppList',
             makeDisplayWrapper(ctx));
+        const okPopup = this._injectionManager.overrideMethod(dialogProto, 'populateMenu',
+            makePopulateMenuWrapper(ctx));
 
-        if (!okSort || !okDisplay) {
+        if (!okSort || !okDisplay || !okPopup) {
             warn('unexpected injection failure (double inject?); rolling back');
             this._withdraw();
             return;

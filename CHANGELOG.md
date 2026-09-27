@@ -29,3 +29,13 @@
 
 - Alphabet Jump List 已通过上游 MR !284 合入 ArcMenu 70.0（官方名 Bucket Jump List）；
 - 旧覆盖式补丁（含旧 install.sh）移入 `legacy/` 仅作存档，禁止使用。
+
+## arcmenu-pinyin 1.1.0 (2026-09-27)
+
+- `#` 组从列表末尾移至**最前**（Windows 式）——由扩展比较器决定，非 ArcMenu 默认行为；
+- 跳转面板（Bucket Jump）改为**固定 27 键**：`#` + A–Z 全量展示，`#` 在 `A` 之前，
+  无对应应用的字母**置灰且不可点击**（`reactive:false` + 40% 透明度）；
+  键位因此不随应用增删漂移（装新 H 应用不再使 H 之后字母后移）；
+- 实现：运行时覆写官方 `BucketJumpListDialog.populateMenu`（第三个注入点，
+  同一结构审计门控与注入生命周期）；网格列数沿用官方公式（27 → 6 列 × 5 行）；
+- 新增纯逻辑模块 `src/bucketGrid.js` 与 5 项双跑单测；`sort.test` 断言翻转（# 最前）。

@@ -9,6 +9,7 @@ const TEST_FILES = [
     './sort.test.mjs',
     './injection.test.mjs',
     './integration.test.mjs',
+    './bucketgrid.test.mjs',
 ];
 
 function fileUrl(relative) {

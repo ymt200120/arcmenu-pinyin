@@ -8,6 +8,9 @@
 // 复用官方代码（_createLabelWithSeparator / enableClickGesture /
 // addBucketChar / populateMenu）。
 
+import St from 'gi://St';
+
+import {buildPopupEntries, maxColumnsFor, FIXED_BUCKETS} from './bucketGrid.js';
 import {sortEntriesByLetter} from './pinyinIndex.js';
 
 /**
@@ -108,4 +111,54 @@ function displayPinyinGroupedList(ctx, apps, grid) {
     if (this.applicationsBox && grid === this.applicationsGrid &&
         !this.applicationsBox.contains(this.applicationsGrid))
         this.applicationsBox.add_child(this.applicationsGrid);
+}
+
+/**
+ * 跳转面板固定键位版 populateMenu：
+ * 覆写官方 BucketJumpListDialog.populateMenu，使弹窗固定显示
+ * '#' + A–Z 共 27 键（顺序与应用列表一致，'#' 在最前）；
+ * 无对应应用的键置灰（reactive:false + 半透明）且不可点击。
+ * 官方实现（menuWidgets.js:3005-3038）的行为在“有应用的键”上逐行保留：
+ * clicked → toggle() + _scrollToItem(header)，header 'activate' → toggle()。
+ */
+export function makePopulateMenuWrapper(ctx) {
+    return original => function () {
+        if (!this._bucketChars)
+            return;
+
+        this._grid.destroy_all_children();
+
+        const maxColumns = maxColumnsFor(FIXED_BUCKETS.length);
+        let row = 0;
+        let column = 0;
+
+        for (const entry of buildPopupEntries([...this._bucketChars.keys()])) {
+            const button = new St.Button({
+                label: entry.char,
+                style_class: 'button arcmenu-alphabet-button',
+                x_expand: false,
+                reactive: entry.active,
+                can_focus: entry.active,
+            });
+
+            if (entry.active) {
+                const header = this._bucketChars.get(entry.char);
+                button.connectObject('clicked', () => {
+                    this.toggle();
+                    this._scrollToItem(header);
+                }, this);
+
+                header.connectObject('activate', () => this.toggle(), this);
+            } else {
+                button.style = 'opacity: 0.4;';
+            }
+
+            this._grid.layout_manager.attach(button, column, row, 1, 1);
+            column++;
+            if (column >= maxColumns) {
+                column = 0;
+                row++;
+            }
+        }
+    };
 }

@@ -96,6 +96,19 @@ export async function auditArcMenu(arcPath) {
     checks.displayRegistersBuckets = displaySrc.includes('addBucketChar');
     checks.displayPopulatesBucketMenu = displaySrc.includes('populateMenu');
 
+    // 跳转面板固定键位功能依赖 BucketJumpListDialog 的形状（70.0 审计基准）
+    const dialogClass = modules.menuWidgets?.BucketJumpListDialog;
+    const dialogProto = dialogClass?.prototype;
+    const dialogPopulateSrc = typeof dialogProto?.populateMenu === 'function'
+        ? dialogProto.populateMenu.toString() : '';
+    checks.hasBucketJumpDialog = typeof dialogClass === 'function';
+    checks.bucketDialogHasPopulateMenu = typeof dialogProto?.populateMenu === 'function';
+    checks.bucketDialogHasScrollToItem = typeof dialogProto?._scrollToItem === 'function';
+    checks.bucketDialogPopulateMarks = dialogPopulateSrc.includes('_bucketChars') &&
+        dialogPopulateSrc.includes('_grid') &&
+        dialogPopulateSrc.includes('arcmenu-alphabet-button') &&
+        dialogPopulateSrc.includes('_scrollToItem');
+
     for (const [name, ok] of Object.entries(checks))
         if (!ok)
             problems.push(`check failed: ${name}`);

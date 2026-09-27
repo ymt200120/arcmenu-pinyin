@@ -79,7 +79,7 @@ scripts/uninstall.sh        # removes only this extension; ArcMenu needs no rest
 Notes:
 
 - Polyphones rely on pinyin-pro's built-in dictionary; rare proper nouns may land on an unexpected letter (or in `#`) — grouping position only, functionality unaffected.
-- Names starting with digits/punctuation go to the `#` bucket (last), matching Windows' Chinese-locale behaviour.
+- Names starting with digits/punctuation go to the `#` bucket placed **first** (Windows-style); the jump popup always shows all `#` + A–Z keys (27), with empty buckets greyed out and non-clickable, so key positions never drift.
 - GNOME temporarily cycles extensions enabled after the one being disabled ("rebase"); this extension's state machine is idempotent under such cycles.
 
 ## Troubleshooting

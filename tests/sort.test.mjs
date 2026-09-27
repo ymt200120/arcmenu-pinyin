@@ -27,7 +27,7 @@ export const tests = [
         assert.strictEqual(sorted[3].name, '计算器');
     }],
 
-    ['sort: # 桶固定最后', () => {
+    ['sort: # 桶固定最前（Windows 式）', () => {
         const entries = [
             {key: 'd1', name: '9 Safari'},
             {key: 'c1', name: 'C App'},
@@ -35,7 +35,7 @@ export const tests = [
             {key: 'w1', name: '微信'},
         ];
         const sorted = sortEntriesByLetter(entries, idx.letterForName);
-        assert.strictEqual(keys(sorted), 'CW##');
+        assert.strictEqual(keys(sorted), '##CW');
     }],
 
     ['sort: 同桶内次序确定（zh 排序）', () => {
@@ -61,7 +61,7 @@ export const tests = [
         assert.strictEqual(sortEntriesByLetter(single, idx.letterForName)[0].key, 'a');
     }],
 
-    ['sort: 分组边界——桶字母序列单调且 # 结尾', () => {
+    ['sort: 分组边界——桶字母序列单调且 # 开头', () => {
         const names = ['微信', '哔哩哔哩', 'Firefox', '腾讯会议', '1Password', '知乎',
             'Chrome', '设置', '终端', '(Parens)', 'Java', '摘 要'];
         const entries = names.map((name, i) => ({key: String(i), name}));
@@ -72,10 +72,11 @@ export const tests = [
             const cur = ks[i];
             if (prev === cur)
                 continue;
-            if (prev === '#')
-                throw new Error(`# 出现在 ${cur} 之前`);
-            if (cur !== '#' && prev > cur)
+            if (cur === '#')
+                throw new Error(`# 未排在最前（出现在 ${prev} 之后）`);
+            if (prev !== '#' && prev > cur)
                 throw new Error(`桶序列逆序: ${prev} > ${cur}`);
         }
+        assert.strictEqual(ks[0], '#');
     }],
 ];
