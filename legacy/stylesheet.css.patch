@@ -1,0 +1,38 @@
+--- backup/stylesheet.css.orig	2026-08-28 15:06:00.784704276 +0800
++++ stylesheet.css	2026-08-28 15:14:39.784604220 +0800
+@@ -123,6 +123,33 @@
+     font-size: small;
+     border-radius: 8px;
+     background-color: rgba(255, 255, 255, 0.1);
+-    margin: 0px; 
++    margin: 0px;
+     padding: 0px 10px;
++}
++
++.arcmenu-alphabet-panel{
++    padding: 14px 16px;
++}
++
++.arcmenu-alphabet-grid{
++    spacing: 6px;
++}
++
++.arcmenu-alphabet-row{
++    spacing: 6px;
++}
++
++.arcmenu-alphabet-button{
++    width: 36px;
++    height: 36px;
++    min-height: 0px;
++    padding: 0px;
++    margin: 0px;
++    border-radius: 8px;
++    font-weight: bold;
++    text-align: center;
++}
++
++.arcmenu-alphabet-button-disabled{
++    opacity: 0.35;
+ }
+\ 文件末尾没有换行符
