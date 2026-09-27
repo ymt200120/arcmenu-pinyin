@@ -7,7 +7,12 @@
 `run-isolated-check.sh` 的运行方式：
 
 - 通过 `dbus-run-session` 启动**私有 DBus 会话**（与你正在使用的桌面会话完全隔离）；
-- `HOME`/`XDG_DATA_HOME`/`XDG_CONFIG_HOME`/`XDG_CACHE_HOME` 全部指向 `/tmp` 下的临时目录，内层脚本带硬性断言（不隔离即拒绝执行）；
+  会话总线 socket 与全部内层进程的 `XDG_RUNTIME_DIR` 指向沙箱内私有目录（0700），
+  不共享真实 `/run/user/<uid>`；
+- `HOME`/`XDG_DATA_HOME`/`XDG_CONFIG_HOME`/`XDG_CACHE_HOME` 全部指向 `/tmp` 下的临时目录；
+- 内层会话在**任何** dconf/gsettings/gnome-shell 操作之前执行 fail-closed 隔离断言
+  （`lib/isolation-asserts.sh`：HOME、XDG_*、私有会话总线与真实环境逐一比对，
+  任何一项不满足立即以非零码退出；断言库行为由 `test-isolation-asserts.sh` 纯 shell 测试覆盖）；
 - 从系统**拷贝**一份 ArcMenu 副本到隔离扩展目录（原目录只读，不做任何修改）；
 - 测试用的中英文/多音字 `.desktop` 文件只存在于隔离目录；
 - 退出时仅终止本次会话中由脚本自己启动的进程。

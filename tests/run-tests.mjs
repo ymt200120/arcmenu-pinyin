@@ -8,6 +8,7 @@ const TEST_FILES = [
     './pinyin.test.mjs',
     './sort.test.mjs',
     './injection.test.mjs',
+    './integration.test.mjs',
 ];
 
 function fileUrl(relative) {

@@ -25,6 +25,7 @@ import {
     auditArcMenu,
     lookupArcMenu,
 } from './src/compat.js';
+import {evaluateResumption, RESUME_POSTPONE, RESUME_SKIP} from './src/integrationGuard.js';
 import {InjectionManager} from './src/injection.js';
 import {makeDisplayWrapper, makeSortWrapper} from './src/displayPatch.js';
 import {createPinyinIndex} from './src/pinyinIndex.js';
@@ -92,9 +93,31 @@ export default class ArcMenuPinyinExtension extends Extension {
         this._cancelIntegrateTimer();
         this._integrateTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, INTEGRATE_DELAY_MS, () => {
             this._integrateTimeoutId = 0;
-            this._integrate();
+            // 显式 .catch：集成链上的意外异常必须经统一前缀输出，
+            // 且不得留下 partially-injected 状态（见 _onIntegrationFailure）。
+            this._integrate().catch(e => this._onIntegrationFailure(e));
             return GLib.SOURCE_REMOVE;
         });
+    }
+
+    /**
+     * 集成链的兜底错误处理：记录完整诊断、还原任何已生效的部分覆写、
+     * 复位状态等待下一次集成时机。生命周期竞态（disable-during-await）
+     * 不走这里——它们在恢复点守卫中被静默处理。
+     */
+    _onIntegrationFailure(error) {
+        warn(`integration failed: ${error?.stack ?? error}`);
+        try {
+            if (this._injectionManager?.hasOverrides()) {
+                const restored = this._injectionManager.clear();
+                warn(`integration cleanup: ${restored} override(s) restored`);
+                this._rebuildLayouts();
+            }
+        } catch (cleanupError) {
+            warn(`integration cleanup failed: ${cleanupError?.stack ?? cleanupError}`);
+        }
+        if (this._state !== 'disabled')
+            this._state = 'waiting-for-arcmenu';
     }
 
     _cancelIntegrateTimer() {
@@ -109,6 +132,11 @@ export default class ArcMenuPinyinExtension extends Extension {
      * 然后审计 + 版本门控 + 注入 + 重建布局。
      */
     async _integrate() {
+        // 入口守卫：disable() 会先取消未触发的定时器再完成 teardown，
+        // 但为防任何路径在 teardown 后调用，此处同样静默退出。
+        if (this._state === 'disabled' || !this._injectionManager)
+            return;
+
         const arc = lookupArcMenu(Main);
         if (!arc || arc.state !== ExtensionState.ACTIVE) {
             this._state = 'waiting-for-arcmenu';
@@ -121,6 +149,28 @@ export default class ArcMenuPinyinExtension extends Extension {
         }
 
         const audit = await auditArcMenu(arc.path);
+
+        // ---- 恢复点守卫：await 期间生命周期可能已变化 ----
+        // disable-during-await：teardown 已置空 _injectionManager / 置
+        // _state='disabled'，此时必须静默退出、绝不注入；ArcMenu 若被
+        // 停用或更换路径则推迟，等待下一次状态事件。
+        const arcNow = lookupArcMenu(Main);
+        const resumption = evaluateResumption({
+            teardown: this._state === 'disabled',
+            injectionManager: this._injectionManager,
+            arcmenuStateNow: arcNow?.state,
+            arcmenuActiveState: ExtensionState.ACTIVE,
+            arcmenuPathNow: arcNow?.path,
+            auditedPath: arc.path,
+        });
+        if (resumption === RESUME_SKIP)
+            return;
+        if (resumption === RESUME_POSTPONE) {
+            log('ArcMenu state changed during integration; waiting for next transition');
+            this._state = 'waiting-for-arcmenu';
+            return;
+        }
+
         if (!audit.ok) {
             this._state = 'incompatible';
             warn(`ArcMenu at "${arc.path}" failed structure audit — refusing to inject. ` +

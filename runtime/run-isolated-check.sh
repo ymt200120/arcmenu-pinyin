@@ -17,16 +17,25 @@ ARC_SRC="${1:-$HOME/.local/share/gnome-shell/extensions/arcmenu@arcmenu.com}"
 PRODUCT_UUID='arcmenu-pinyin@ymt200120'
 PROBE_UUID='probe-pinyin-check@ymt200120'
 
+# ---- 捕获真实环境基准（进入沙箱前），供内层 fail-closed 断言比较 ----
+REAL_HOME="$HOME"
+REAL_XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+REAL_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-}"
+export REAL_HOME REAL_XDG_RUNTIME_DIR REAL_SESSION_BUS_ADDRESS
+
 [ -d "$ARC_SRC" ] || { echo "未找到 ArcMenu 扩展目录: $ARC_SRC"; exit 2; }
 
 # ---- 组装隔离环境 ----
 rm -rf "$RUN"
 mkdir -p "$RUN/data/gnome-shell/extensions" "$RUN/data/applications" \
-         "$RUN/home" "$RUN/config/dconf" "$RUN/cache"
+         "$RUN/home" "$RUN/config/dconf" "$RUN/cache" "$RUN/runtime"
+chmod 700 "$RUN/runtime"
 
 cp -r "$ARC_SRC" "$RUN/data/gnome-shell/extensions/arcmenu@arcmenu.com"
 cp -r "$REPO_ROOT/arcmenu-pinyin@ymt200120" "$RUN/data/gnome-shell/extensions/$PRODUCT_UUID"
 cp -r "$REPO_ROOT/runtime/probe-pinyin-check@ymt200120" "$RUN/data/gnome-shell/extensions/$PROBE_UUID"
+mkdir -p "$RUN/lib"
+cp "$REPO_ROOT/runtime/lib/isolation-asserts.sh" "$RUN/lib/isolation-asserts.sh"
 
 # ---- 隔离环境的测试应用（中英文 + 多音字样例）----
 make_desktop() {
@@ -62,10 +71,12 @@ export XDG_DATA_HOME="$RUN/data"
 export XDG_CONFIG_HOME="$RUN/config"
 export XDG_CACHE_HOME="$RUN/cache"
 export XDG_STATE_HOME="$RUN/home/.local/state"
+export XDG_RUNTIME_DIR="$RUN/runtime"
 export NO_AT_BRIDGE=1
 
-case "$XDG_CONFIG_HOME" in "$RUN"/*) ;; *) echo "FATAL: config not isolated"; exit 42 ;; esac
-case "$XDG_DATA_HOME" in "$RUN"/*) ;; *) echo "FATAL: data not isolated"; exit 42 ;; esac
+# ---- fail-closed 隔离断言：必须在任何 dconf/gsettings/gnome-shell 操作之前 ----
+. "$RUN/lib/isolation-asserts.sh"
+assert_isolation
 
 # 手动启动 dconf-service（dbus 激活路径存在首写竞态）
 /usr/libexec/dconf-service &
@@ -109,7 +120,10 @@ chmod +x "$RUN/inner.sh"
 
 # ---- 运行 ----
 echo ">>> 在隔离会话中启动 gnome-shell --headless ..."
-dbus-run-session -- bash "$RUN/inner.sh" 2>&1 | grep -E 'isolated env|cli:|TIMEOUT' || true
+# 私有会话总线：dbus-run-session 在 XDG_RUNTIME_DIR（沙箱私有目录）内
+# 创建 bus socket；显式剔除可能残留的真实总线地址。
+env -u DBUS_SESSION_BUS_ADDRESS XDG_RUNTIME_DIR="$RUN/runtime" \
+    dbus-run-session -- bash "$RUN/inner.sh" 2>&1 | grep -E 'isolated env|cli:|TIMEOUT' || true
 
 # ---- 评估结果 ----
 python3 - "$RUN/results.json" <<'PYEOF'
@@ -171,5 +185,8 @@ rc=$?
 
 echo '--- 非 DING 的 JS ERROR 数（期望 0）---'
 grep 'JS ERROR' "$RUN/shell.log" 2>/dev/null | grep -cv DING || true
+
+# 清理私有 runtime 目录（结果与日志保留在 $RUN 供查阅）
+rm -rf "$RUN/runtime"
 
 exit $rc
