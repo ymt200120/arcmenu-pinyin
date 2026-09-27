@@ -1,30 +1,31 @@
 # Changelog
 
-## v1.0.0 (2026-08-28)
+## arcmenu-pinyin 1.0.0 (2026-09-27)
 
-首个公开发布版本。
+仓库由"覆盖式补丁套件"转型为独立扩展 `arcmenu-pinyin@ymt200120`。
 
-### Alphabet Jump List（所有分组列表布局）
+### 新形态：独立扩展（不修改 ArcMenu 任何文件）
 
-- 点击"所有应用"列表中的字母分组标题弹出 A-Z 选择面板（6 列网格，主题继承）
-- 有应用的字母可点，无应用的置灰禁用
-- 点击字母精确滚动到对应分组（实测比值自校准缩放）
-- Esc / 点击面板外 / 重复点击标题关闭，全部由 PopupMenuManager 托管
-- 已知修复（相对早期实验版）：
-  - 移除侧边字母栏方案（stage 级 captured-event 拖拽存在处理器泄漏风险，
-    曾导致全局输入冻结）
-  - 跳转偏移改为实测比值，修复分数缩放下"点 W 落在 M"的偏差
-  - header 改用 button-press-event 挂钩（PopupBaseMenuItem 的 ClickAction
-    由构造参数决定 enabled，activate 信号对 ArcMenuSeparator 不发射）
+- 运行时集成：`Main.extensionManager.lookup()` 定位 ArcMenu → 按 URI 导入其 ES 模块
+  （GJS 模块缓存共享）→ 对 `BaseMenuLayout.prototype` 的
+  `_createSortedAppsList` / `_displayAppList` 做临时覆写；
+- 复用官方 Bucket Jump List：拼音字母直接注册进 `addBucketChar()`，
+  弹窗网格与点击跳转全部为官方实现；
+- 兼容性门控：结构审计（注入点逐项形状校验）+ ArcMenu 版本白名单（当前 70.x），
+  不通过即安全拒绝注入；
+- 生命周期状态机：ArcMenu 与本扩展的启用顺序无关；ArcMenu 禁用时自动撤除注入；
+  对 GNOME 扩展禁用 rebase 循环幂等；
+- 拼音转换升级：pinyin-pro 整串分词转换取首字母，首字多音字按词定音
+  （重庆银行→C 而非 Z、厦门银行→X 而非 S；旧补丁为仅转首字）。
 
-### 拼音分组（az 布局）
+### 验证
 
-- 应用按拼音首字母重排分组，汉字名归入 A-Z，数字/符号/未收录字符归 #
-- 捆绑 pinyin-pro v3.29.3（MIT，纯 JS，GJS 兼容）
-- 组标题与索引面板使用大写字母，与 Windows 中文环境行为一致
+- 单元测试 16 项：Node 与 GJS 双跑全通过（`tests/`）；
+- 隔离 headless GNOME Shell 46.0 + 真实 ArcMenu 70.0 端到端验证：
+  注入 → CLI 禁用 → 官方行为恢复 → 再启用 → 拼音恢复，全链路通过、
+  零 JS 错误（`runtime/run-isolated-check.sh`，证据见 `docs/verification/`）。
 
-### 基础设施
+### 与上游的关系
 
-- install.sh：增量备份 + ArcMenu 版本更新自动检测刷新基准
-- uninstall.sh：一键恢复全部原始文件
-- test/：pinyin-pro GJS 兼容性验证、分组排序模拟、Clutter API introspection
+- Alphabet Jump List 已通过上游 MR !284 合入 ArcMenu 70.0（官方名 Bucket Jump List）；
+- 旧覆盖式补丁（含旧 install.sh）移入 `legacy/` 仅作存档，禁止使用。
