@@ -63,9 +63,9 @@ gnome-extensions enable arcmenu-pinyin@ymt200120
 方式二（手动）：
 
 ```bash
-scripts/build.sh            # 生成 dist/arcmenu-pinyin-v1.0.0.zip
+scripts/build.sh            # 生成 dist/arcmenu-pinyin-v1.1.0.zip
 mkdir -p ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
-unzip dist/arcmenu-pinyin-v1.0.0.zip -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
+unzip dist/arcmenu-pinyin-v1.1.0.zip -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
 # 注销重新登录（Wayland 必须），然后：
 gnome-extensions enable arcmenu-pinyin@ymt200120
 ```

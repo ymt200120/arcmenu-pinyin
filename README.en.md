@@ -63,9 +63,9 @@ gnome-extensions enable arcmenu-pinyin@ymt200120
 Manual:
 
 ```bash
-scripts/build.sh            # produces dist/arcmenu-pinyin-v1.0.0.zip
+scripts/build.sh            # produces dist/arcmenu-pinyin-v1.1.0.zip
 mkdir -p ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
-unzip dist/arcmenu-pinyin-v1.0.0.zip -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
+unzip dist/arcmenu-pinyin-v1.1.0.zip -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
 # Log out and back in (Wayland), then:
 gnome-extensions enable arcmenu-pinyin@ymt200120
 ```
