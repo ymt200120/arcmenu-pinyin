@@ -1,0 +1,7 @@
+{
+    "uuid": "probe-pinyin-check@ymt200120",
+    "name": "ArcMenu Pinyin Runtime Probe",
+    "description": "Isolated-headless-shell verification probe (test harness only)",
+    "shell-version": ["45", "46", "47", "48", "49"],
+    "version": 1
+}
