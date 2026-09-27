@@ -9,7 +9,16 @@
 
 **不修改 ArcMenu 的任何文件**；禁用/卸载本扩展后，ArcMenu 立即恢复官方行为，无需注销重登。
 
+> **独立性声明**：本项目是独立的第三方扩展，与 ArcMenu 官方无隶属关系；ArcMenu 官方未集成、也未认证本扩展。
+> 历史上本仓库的 Alphabet Jump List 曾以 [MR !284](https://gitlab.com/arcmenu/ArcMenu/-/merge_requests/284) 贡献进入 ArcMenu 上游
+> （官方更名为 Bucket Jump List），本扩展在运行时复用该官方组件，但这不构成本扩展获得官方认证。
+
 English: [README.en.md](README.en.md)
+
+## 功能演示
+
+![历史演示：A-Z 跳转面板](legacy/demo.gif)
+*历史演示图（v1.0.0 前补丁时期录制，展示现为 ArcMenu 官方功能的 A-Z 跳转面板；欢迎补充 v1.1.0 的 27 键固定面板截图）*
 
 ## 工作原理（一图流）
 
@@ -44,8 +53,8 @@ English: [README.en.md](README.en.md)
 方式一（脚本，推荐）：
 
 ```bash
-git clone https://github.com/ymt200120/arcmenu-alphabet-jump.git
-cd arcmenu-alphabet-jump
+git clone https://github.com/ymt200120/arcmenu-pinyin.git
+cd arcmenu-pinyin
 scripts/install.sh          # 只写入本扩展自己的目录
 # 注销重新登录（Wayland 必须），然后：
 gnome-extensions enable arcmenu-pinyin@ymt200120
@@ -62,6 +71,12 @@ gnome-extensions enable arcmenu-pinyin@ymt200120
 ```
 
 > 禁止 `curl … | bash` 之类的远程脚本直装；请从 GitHub Releases 下载 zip 或自行构建。
+
+## 更新 / 启用 / 禁用
+
+- **更新**：下载新版 zip（或 `git pull` 后）重新执行 `scripts/install.sh`——它会覆盖本扩展自身目录并保留你的 ArcMenu 设置；代码更新后需**注销重登**一次（GNOME 平台的模块缓存限制，所有扩展皆如此）；
+- **禁用**：`gnome-extensions disable arcmenu-pinyin@ymt200120`（立即恢复官方行为）；
+- **启用**：`gnome-extensions enable arcmenu-pinyin@ymt200120`。
 
 ## 卸载
 
@@ -81,6 +96,11 @@ scripts/uninstall.sh        # 只移除本扩展目录；ArcMenu 无需任何恢
 - 多音字按 pinyin-pro 词库处理，未收录的冷门词可能归入非预期字母（仅影响分组位置，不影响使用）；
 - 数字、标点开头的名称进入 `#` 桶，置于列表**最前**（Windows 式）；跳转面板固定显示 # + A–Z 共 27 键，无应用的字母置灰不可点，键位不随应用增删漂移；
 - GNOME 在禁用"任何扩展"时会临时循环其后启用的扩展（rebase 机制，`_callExtensionDisable` 的防冲突设计），本扩展的状态机对此幂等，无副作用。
+
+## 问题反馈
+
+[GitHub Issues](https://github.com/ymt200120/arcmenu-pinyin/issues) —— 提交时请附上
+`journalctl --user -b | grep arcmenu-pinyin` 的输出与复现步骤。
 
 ## 故障排查
 
@@ -128,6 +148,13 @@ scripts/                    安装/卸载/构建
 docs/                       兼容性表、验证证据、故障排查
 legacy/                     旧覆盖式补丁（已被上游 MR !284 取代，仅存档）
 ```
+
+## 致谢与贡献
+
+- 项目需求、设计决策与全部真机验收由 [ymt200120](https://github.com/ymt200120) 主导；
+- 代码实现由 AI coding agent（ZCode / GLM）在上述需求、验收标准与安全约束下协作完成；
+- 拼音转换依赖 [pinyin-pro](https://github.com/zh-lx/pinyin-pro) v3.29.3（MIT，来源与修改声明见 `arcmenu-pinyin@ymt200120/vendor/pinyin-pro/PROVENANCE.md`）；
+- Alphabet Jump List 由 ymt200120 设计并实现，经 [MR !284](https://gitlab.com/arcmenu/ArcMenu/-/merge_requests/284) 进入 ArcMenu 官方。
 
 ## License
 

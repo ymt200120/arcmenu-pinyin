@@ -1,12 +1,23 @@
 # 兼容性表与门控策略
 
-## 已验证组合
+## 支持状态分级
 
-| ArcMenu | GNOME Shell | 发行说明 | 验证方式 | 结果 |
-| --- | --- | --- | --- | --- |
-| 70.0 (version 74) | 46.0 (Ubuntu 24.04, Wayland) | Ubuntu 24.04 用户扩展安装 | 隔离 headless Shell 端到端验证（`runtime/run-isolated-check.sh`）+ Node/GJS 单元测试 | ✅ 全部通过 |
+**✅ 真机验证**（完整功能 + 真机卸载/重装周期，证据 `docs/verification/` 与 canary 报告）：
 
-验证证据：`docs/verification/`（探针阶段数据与评估输出）。
+| ArcMenu | GNOME Shell | 验证方式 |
+| --- | --- | --- |
+| 70.0 (version 74) | 46.0 (Ubuntu 24.04.4, Wayland) | 隔离 headless Shell 端到端 + 主力真机 Canary（安装/启用/卸载/重装）+ Node/GJS 单元测试 |
+
+**🔍 仅静态结构审计**（shell-version 允许安装；注入前逐项形状审计，不匹配即安全拒绝）：
+
+- GNOME Shell 45 / 47–49（shell-version 列表允许安装，运行时行为未实测）
+- ArcMenu 70.x 其他小版本（构建差异未知，审计兜底）
+
+**❓ 未测试**：
+
+- ArcMenu 71+ 及其他主版本（默认拒绝注入）
+- X11 会话、多显示器第二屏菜单细节
+- extensions.gnome.org 商店合规性
 
 ## 门控策略（对未验证版本的保护）
 

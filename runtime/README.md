@@ -52,7 +52,7 @@ runtime/run-isolated-check.sh /path/to/arcmenu@arcmenu.com
 
 ## CI 说明
 
-`.github/workflows/ci.yml` 中的 `runtime-verify` 任务默认 `continue-on-error`，
-因为在 GitHub 托管运行器上需要额外配置 ArcMenu 70 构建包的获取方式
-（ArcMenu 官方发布于 GitLab Releases / extensions.gnome.org，URL 变动较频繁）。
-本地运行 `runtime/run-isolated-check.sh` 是权威验证途径。
+本套件**刻意不进入公开 CI**：GNOME runtime 验证需要对 ArcMenu 构建包与显示环境做完整隔离证明，
+公开 runner 上无法满足。CI（`.github/workflows/ci.yml`）只覆盖单元测试、Shell 语法、
+隔离断言库行为测试与安装包构建/内容审计；runtime 验证以本地 `run-isolated-check.sh`
+与真机 canary 流程为准（见 CANARY-REPORT.md）。

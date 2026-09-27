@@ -1,10 +1,17 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, arcmenu-pinyin]
   pull_request:
   workflow_dispatch:
+
+# 说明：GNOME runtime（headless shell）验证是人工 canary 流程的一部分
+# （见 runtime/README.md 与 CANARY-REPORT.md），刻意不在公开 CI 中执行，
+# 避免形成未经完整隔离证明的虚假验收信号。
 
 jobs:
   test-node:
@@ -18,11 +25,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - name: 运行拼音/排序/注入测试
+      - name: 运行拼音/排序/注入/守卫/键位测试
         run: node tests/run-tests.mjs
 
   test-gjs:
-    name: 单元测试 (GJS, GNOME Shell 运行时)
+    name: 单元测试 (GJS，与 GNOME Shell 同运行时)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -35,41 +42,48 @@ jobs:
       - name: 运行同一套测试（GJS）
         run: gjs -m tests/run-tests.mjs
 
-  build:
-    name: 打包发布 zip
-    runs-on: ubuntu-latest
-    needs: [test-node, test-gjs]
+  shell-checks:
+    name: Shell 语法与隔离断言测试
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: 构建
+      - name: bash -n 语法检查
         run: |
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends zip
-          scripts/build.sh dist
+          for f in scripts/install.sh scripts/uninstall.sh scripts/build.sh \
+                   runtime/run-isolated-check.sh runtime/lib/isolation-asserts.sh \
+                   runtime/test-isolation-asserts.sh; do
+            bash -n "$f"
+            echo "OK  $f"
+          done
+      - name: 隔离断言库行为测试（纯 shell，无 GNOME）
+        run: bash runtime/test-isolation-asserts.sh
+
+  build:
+    name: 构建发布包与内容审计
+    runs-on: ubuntu-24.04
+    needs: [test-node, test-gjs, shell-checks]
+    steps:
+      - uses: actions/checkout@v4
+      - name: 安装 zip/unzip
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends zip unzip
+      - name: 构建（内置 zip 根/意外条目校验）
+        run: scripts/build.sh dist
+      - name: 安装包内容审计
+        run: |
+          ZIP=dist/arcmenu-pinyin-v1.1.0.zip
+          test -f "$ZIP"
+          # metadata 恰好在根
+          [ "$(unzip -Z1 "$ZIP" | grep -cx 'metadata.json')" = "1" ]
+          # uuid/目录边界：不得出现其他扩展或 VCS/临时内容
+          if unzip -Z1 "$ZIP" | grep -E 'arcmenu@arcmenu\.com|dash-to-panel|blur-my-shell|gsconnect|kimpanel|\.git(/|$)|dist/|runtime/'; then
+            echo "意外条目" >&2; exit 1
+          fi
+          # 运行时代码禁引扫描（写配置/文件/进程）
+          rm -rf pkg && mkdir pkg && unzip -q "$ZIP" -d pkg
+          ! grep -rEl "gsettings set|dconf (write|load|reset)|gnome-extensions|file_set_contents|replace_contents|Subprocess|GLib\.spawn" \
+              pkg/extension.js pkg/src/
+          sha256sum "$ZIP"
       - uses: actions/upload-artifact@v4
         with:
           name: arcmenu-pinyin-zip
           path: dist/*.zip
-
-  runtime-verify:
-    name: 隔离 headless Shell 端到端验证（可选，需 gnome-shell 运行器）
-    runs-on: ubuntu-24.04
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - name: 安装 GNOME Shell 与 ArcMenu
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends gnome-shell gnome-menus zip curl
-      - name: 下载 ArcMenu 70.0 构建包
-        run: |
-          curl -fsSL -o /tmp/arcmenu.zip \
-            "https://gitlab.com/arcmenu/ArcMenu/-/package_files/../downloads" 2>/dev/null \
-            || echo "ArcMenu 包地址需按 Release 页面更新（见 docs/compatibility.md）"
-          mkdir -p /tmp/arcmenu-ext
-          unzip -q /tmp/arcmenu.zip -d /tmp/arcmenu-ext || true
-      - name: 运行隔离验证
-        run: |
-          # runtime/run-isolated-check.sh 接受 ArcMenu 扩展目录作为参数；
-          # CI 中 ArcMenu 来源需按其官方发布渠道配置，详见 runtime/README.md。
-          echo "此步骤需要在配置好 ArcMenu 来源后启用；本地验证直接运行："
-          echo "  runtime/run-isolated-check.sh"

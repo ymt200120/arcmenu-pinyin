@@ -9,6 +9,15 @@ A standalone GNOME Shell extension that adds **Chinese pinyin alphabetical group
 
 **It never modifies ArcMenu's files.** Disable or uninstall this extension and ArcMenu instantly returns to stock behaviour — no re-login needed.
 
+> **Independence**: this is an independent third-party project, not affiliated with or endorsed by ArcMenu.
+> The Alphabet Jump List from this repository was upstreamed via [MR !284](https://gitlab.com/arcmenu/ArcMenu/-/merge_requests/284)
+> (renamed "Bucket Jump List" by upstream); this extension reuses that official component at runtime, which does not constitute endorsement.
+
+## Demo
+
+![Historical demo: A-Z jump panel](legacy/demo.gif)
+*Historical recording (pre-v1.0.0 patch era) of the A-Z jump panel, now an official ArcMenu feature.*
+
 ## How it works
 
 ```
@@ -44,8 +53,8 @@ A standalone GNOME Shell extension that adds **Chinese pinyin alphabetical group
 Script (recommended):
 
 ```bash
-git clone https://github.com/ymt200120/arcmenu-alphabet-jump.git
-cd arcmenu-alphabet-jump
+git clone https://github.com/ymt200120/arcmenu-pinyin.git
+cd arcmenu-pinyin
 scripts/install.sh          # writes only this extension's own directory
 # Log out and back in (required on Wayland), then:
 gnome-extensions enable arcmenu-pinyin@ymt200120
@@ -62,6 +71,12 @@ gnome-extensions enable arcmenu-pinyin@ymt200120
 ```
 
 > No `curl … | bash` remote execution. Download the zip from GitHub Releases or build locally.
+
+## Update / Enable / Disable
+
+- **Update**: re-run `scripts/install.sh` with the new version (it replaces only this extension's own directory and keeps your ArcMenu settings); log out/in once afterwards (GNOME module-cache limitation, applies to all extensions);
+- **Disable**: `gnome-extensions disable arcmenu-pinyin@ymt200120`;
+- **Enable**: `gnome-extensions enable arcmenu-pinyin@ymt200120`.
 
 ## Uninstall
 
@@ -81,6 +96,11 @@ Notes:
 - Polyphones rely on pinyin-pro's built-in dictionary; rare proper nouns may land on an unexpected letter (or in `#`) — grouping position only, functionality unaffected.
 - Names starting with digits/punctuation go to the `#` bucket placed **first** (Windows-style); the jump popup always shows all `#` + A–Z keys (27), with empty buckets greyed out and non-clickable, so key positions never drift.
 - GNOME temporarily cycles extensions enabled after the one being disabled ("rebase"); this extension's state machine is idempotent under such cycles.
+
+## Feedback
+
+[GitHub Issues](https://github.com/ymt200120/arcmenu-pinyin/issues) — please include
+the output of `journalctl --user -b | grep arcmenu-pinyin` and reproduction steps.
 
 ## Troubleshooting
 
@@ -109,6 +129,13 @@ scripts/build.sh            # build release zip
 ```
 
 `runtime/run-isolated-check.sh` boots `gnome-shell --headless` inside a private DBus session with isolated HOME/XDG directories, loads the real ArcMenu + this extension + a probe, and verifies "inject → CLI disable → stock restored → re-enable → pinyin restored" end to end without touching your desktop. See `runtime/README.md`.
+
+## Credits
+
+- Requirements, design decisions and all on-device acceptance led by [ymt200120](https://github.com/ymt200120);
+- Code implemented by an AI coding agent (ZCode / GLM) under those requirements, acceptance criteria and safety constraints;
+- Pinyin conversion uses [pinyin-pro](https://github.com/zh-lx/pinyin-pro) v3.29.3 (MIT, see `arcmenu-pinyin@ymt200120/vendor/pinyin-pro/PROVENANCE.md`);
+- Alphabet Jump List was designed/implemented by ymt200120 and upstreamed via [MR !284](https://gitlab.com/arcmenu/ArcMenu/-/merge_requests/284).
 
 ## License
 
