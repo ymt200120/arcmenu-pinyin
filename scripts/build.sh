@@ -6,8 +6,10 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EXT_DIR="${REPO_ROOT}/arcmenu-pinyin@ymt200120"
 OUT_DIR="${1:-${REPO_ROOT}/dist}"
-
 mkdir -p "${OUT_DIR}"
+# 参数可能为相对路径（CI 传入 dist），而后续 zip 在 EXT_DIR 子 shell 中创建——
+# 必须在此规范化为绝对路径，否则 cd 后相对基准改变导致 "Could not create output file"。
+OUT_DIR="$(cd "${OUT_DIR}" && pwd)"
 VERSION=$(python3 -c "import json;print(json.load(open('${EXT_DIR}/metadata.json'))['version-name'])")
 ZIP_PATH="${OUT_DIR}/arcmenu-pinyin-v${VERSION}.zip"
 
