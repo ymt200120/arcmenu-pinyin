@@ -1,0 +1,296 @@
+{
+  "stages": [
+    {
+      "stage": "probe-enable",
+      "ts": "2026-09-27T06:54:04.050Z",
+      "phase": null
+    },
+    {
+      "stage": "poll-sample",
+      "ts": "2026-09-27T06:54:16.064Z",
+      "bucketCount": 22,
+      "pinyin": true,
+      "cjk": false,
+      "ms": 11
+    },
+    {
+      "stage": "phase1-injected-state",
+      "ts": "2026-09-27T06:54:16.069Z",
+      "layoutFound": true,
+      "appCount": 67,
+      "buckets": [
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "M",
+        "N",
+        "Q",
+        "R",
+        "S",
+        "T",
+        "V",
+        "W",
+        "X",
+        "Y",
+        "Z",
+        "#"
+      ],
+      "gridButtons": 22,
+      "allPinyinBuckets": true,
+      "hasCjkBuckets": false,
+      "monotonic": true,
+      "targets": {
+        "微信": {
+          "found": true,
+          "bucket": "W",
+          "expected": "W"
+        },
+        "腾讯会议": {
+          "found": true,
+          "bucket": "T",
+          "expected": "T"
+        },
+        "哔哩哔哩": {
+          "found": true,
+          "bucket": "B",
+          "expected": "B"
+        },
+        "重庆银行": {
+          "found": true,
+          "bucket": "C",
+          "expected": "C"
+        },
+        "厦门银行": {
+          "found": true,
+          "bucket": "X",
+          "expected": "X"
+        }
+      },
+      "converged": true,
+      "tries": 1
+    },
+    {
+      "stage": "state-event",
+      "ts": "2026-09-27T06:54:27.531Z",
+      "uuid": "arcmenu-pinyin@ymt200120",
+      "state": 1
+    },
+    {
+      "stage": "state-event",
+      "ts": "2026-09-27T06:54:27.537Z",
+      "uuid": "arcmenu-pinyin@ymt200120",
+      "state": 7
+    },
+    {
+      "stage": "probe-disable",
+      "ts": "2026-09-27T06:54:27.549Z",
+      "phase": 2
+    },
+    {
+      "stage": "probe-enable",
+      "ts": "2026-09-27T06:54:27.587Z",
+      "phase": 2
+    },
+    {
+      "stage": "probe-reenable-resume",
+      "ts": "2026-09-27T06:54:27.590Z",
+      "phase": 2
+    },
+    {
+      "stage": "state-event",
+      "ts": "2026-09-27T06:54:27.611Z",
+      "uuid": "arcmenu-pinyin@ymt200120",
+      "state": 2
+    },
+    {
+      "stage": "poll-sample",
+      "ts": "2026-09-27T06:54:30.128Z",
+      "bucketCount": 44,
+      "pinyin": false,
+      "cjk": true,
+      "ms": 12
+    },
+    {
+      "stage": "phase2-after-product-disable",
+      "ts": "2026-09-27T06:54:30.134Z",
+      "layoutFound": true,
+      "appCount": 67,
+      "buckets": [
+        "(",
+        "1",
+        "帮",
+        "哔",
+        "重",
+        "磁",
+        "电",
+        "附",
+        "高",
+        "固",
+        "计",
+        "键",
+        "扩",
+        "密",
+        "启",
+        "任",
+        "日",
+        "软",
+        "厦",
+        "设",
+        "时",
+        "腾",
+        "图",
+        "微",
+        "文",
+        "系",
+        "应",
+        "优",
+        "终",
+        "字",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "M",
+        "N",
+        "Q",
+        "S",
+        "T",
+        "V",
+        "Z"
+      ],
+      "gridButtons": 44,
+      "allPinyinBuckets": false,
+      "hasCjkBuckets": true,
+      "monotonic": false,
+      "targets": {
+        "微信": {
+          "found": true,
+          "bucket": "W",
+          "expected": "W"
+        },
+        "腾讯会议": {
+          "found": true,
+          "bucket": "T",
+          "expected": "T"
+        },
+        "哔哩哔哩": {
+          "found": true,
+          "bucket": "B",
+          "expected": "B"
+        },
+        "重庆银行": {
+          "found": true,
+          "bucket": "C",
+          "expected": "C"
+        },
+        "厦门银行": {
+          "found": true,
+          "bucket": "X",
+          "expected": "X"
+        }
+      },
+      "converged": true,
+      "tries": 1
+    },
+    {
+      "stage": "state-event",
+      "ts": "2026-09-27T06:54:31.692Z",
+      "uuid": "arcmenu-pinyin@ymt200120",
+      "state": 2
+    },
+    {
+      "stage": "state-event",
+      "ts": "2026-09-27T06:54:31.699Z",
+      "uuid": "arcmenu-pinyin@ymt200120",
+      "state": 8
+    },
+    {
+      "stage": "state-event",
+      "ts": "2026-09-27T06:54:31.707Z",
+      "uuid": "arcmenu-pinyin@ymt200120",
+      "state": 1
+    },
+    {
+      "stage": "poll-sample",
+      "ts": "2026-09-27T06:54:35.725Z",
+      "bucketCount": 22,
+      "pinyin": true,
+      "cjk": false,
+      "ms": 11
+    },
+    {
+      "stage": "phase3-after-product-reenable",
+      "ts": "2026-09-27T06:54:35.729Z",
+      "layoutFound": true,
+      "appCount": 67,
+      "buckets": [
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "M",
+        "N",
+        "Q",
+        "R",
+        "S",
+        "T",
+        "V",
+        "W",
+        "X",
+        "Y",
+        "Z",
+        "#"
+      ],
+      "gridButtons": 22,
+      "allPinyinBuckets": true,
+      "hasCjkBuckets": false,
+      "monotonic": true,
+      "targets": {
+        "微信": {
+          "found": true,
+          "bucket": "W",
+          "expected": "W"
+        },
+        "腾讯会议": {
+          "found": true,
+          "bucket": "T",
+          "expected": "T"
+        },
+        "哔哩哔哩": {
+          "found": true,
+          "bucket": "B",
+          "expected": "B"
+        },
+        "重庆银行": {
+          "found": true,
+          "bucket": "C",
+          "expected": "C"
+        },
+        "厦门银行": {
+          "found": true,
+          "bucket": "X",
+          "expected": "X"
+        }
+      },
+      "converged": true,
+      "tries": 1
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,24 @@
+>>> 在隔离会话中启动 gnome-shell --headless ...
+isolated env OK; enabled: ['arcmenu@arcmenu.com', 'arcmenu-pinyin@ymt200120', 'probe-pinyin-check@ymt200120']
+cli: disable product extension
+cli: re-enable product extension
+   {"stage": "probe-enable"}
+   {"stage": "poll-sample"}
+   {"stage": "phase1-injected-state", "appCount": 67, "buckets": ["B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "M", "N", "Q", "R", "S", "T", "V", "W", "X", "Y", "Z", "#"], "monotonic": true}
+   {"stage": "state-event"}
+   {"stage": "state-event"}
+   {"stage": "probe-disable"}
+   {"stage": "probe-enable"}
+   {"stage": "probe-reenable-resume"}
+   {"stage": "state-event"}
+   {"stage": "poll-sample"}
+   {"stage": "phase2-after-product-disable", "appCount": 67, "buckets": ["(", "1", "帮", "哔", "重", "磁", "电", "附", "高", "固", "计", "键", "扩", "密", "启", "任", "日", "软", "厦", "设", "时", "腾", "图", "微", "文", "系", "应", "优", "终", "字", 
+   {"stage": "state-event"}
+   {"stage": "state-event"}
+   {"stage": "state-event"}
+   {"stage": "poll-sample"}
+   {"stage": "phase3-after-product-reenable", "appCount": 67, "buckets": ["B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "M", "N", "Q", "R", "S", "T", "V", "W", "X", "Y", "Z", "#"], "monotonic": true}
+
+EVAL PASS: 注入态 A-Z 分桶 / 禁用即恢复官方 / 再启用即恢复拼音 全部通过
+--- 非 DING 的 JS ERROR 数（期望 0）---
+0

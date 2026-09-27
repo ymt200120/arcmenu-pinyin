@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main, arcmenu-pinyin]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test-node:
+    name: 单元测试 (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: 运行拼音/排序/注入测试
+        run: node tests/run-tests.mjs
+
+  test-gjs:
+    name: 单元测试 (GJS, GNOME Shell 运行时)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: 安装 GJS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gjs
+      - name: GJS 版本
+        run: gjs --version
+      - name: 运行同一套测试（GJS）
+        run: gjs -m tests/run-tests.mjs
+
+  build:
+    name: 打包发布 zip
+    runs-on: ubuntu-latest
+    needs: [test-node, test-gjs]
+    steps:
+      - uses: actions/checkout@v4
+      - name: 构建
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends zip
+          scripts/build.sh dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arcmenu-pinyin-zip
+          path: dist/*.zip
+
+  runtime-verify:
+    name: 隔离 headless Shell 端到端验证（可选，需 gnome-shell 运行器）
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: 安装 GNOME Shell 与 ArcMenu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gnome-shell gnome-menus zip curl
+      - name: 下载 ArcMenu 70.0 构建包
+        run: |
+          curl -fsSL -o /tmp/arcmenu.zip \
+            "https://gitlab.com/arcmenu/ArcMenu/-/package_files/../downloads" 2>/dev/null \
+            || echo "ArcMenu 包地址需按 Release 页面更新（见 docs/compatibility.md）"
+          mkdir -p /tmp/arcmenu-ext
+          unzip -q /tmp/arcmenu.zip -d /tmp/arcmenu-ext || true
+      - name: 运行隔离验证
+        run: |
+          # runtime/run-isolated-check.sh 接受 ArcMenu 扩展目录作为参数；
+          # CI 中 ArcMenu 来源需按其官方发布渠道配置，详见 runtime/README.md。
+          echo "此步骤需要在配置好 ArcMenu 来源后启用；本地验证直接运行："
+          echo "  runtime/run-isolated-check.sh"
