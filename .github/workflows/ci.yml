@@ -27,6 +27,8 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: 运行拼音/排序/注入/守卫/键位测试
         run: node tests/run-tests.mjs
+      - name: 运行隔离探针桶序测试
+        run: node runtime/test-probe-monotonic.mjs
 
   test-gjs:
     name: 单元测试 (GJS，与 GNOME Shell 同运行时)
@@ -68,6 +70,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends zip unzip
       - name: 构建（内置 zip 根/意外条目校验）
         run: scripts/build.sh dist
+      - name: 校验发布包摘要
+        run: (cd dist && sha256sum -c arcmenu-pinyin-v1.1.0.zip.sha256)
       - name: 安装包内容审计
         run: |
           ZIP=dist/arcmenu-pinyin-v1.1.0.zip
@@ -86,4 +90,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: arcmenu-pinyin-zip
-          path: dist/*.zip
+          path: |
+            dist/*.zip
+            dist/*.sha256

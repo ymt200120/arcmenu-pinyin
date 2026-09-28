@@ -28,12 +28,17 @@ export class InjectionManager {
         if (typeof original !== 'function')
             return false;
 
-        owner[methodName] = wrapperFactory(original);
+        // Capture this before assignment: assigning an inherited method creates
+        // an own property, which must be deleted again during restore.
+        const hadOwn = Object.prototype.hasOwnProperty.call(owner, methodName);
+        const wrapper = wrapperFactory(original);
+        owner[methodName] = wrapper;
         this._overrides.set(key, {
             owner,
             methodName,
             original,
-            hadOwn: Object.prototype.hasOwnProperty.call(owner, methodName),
+            wrapper,
+            hadOwn,
         });
         return true;
     }
@@ -50,9 +55,18 @@ export class InjectionManager {
      */
     clear() {
         let restored = 0;
-        for (const {owner, methodName, original, hadOwn} of this._overrides.values()) {
+        for (const {owner, methodName, original, wrapper, hadOwn} of this._overrides.values()) {
             try {
-                if (hadOwn || original !== undefined)
+                // Another extension may have replaced or wrapped our method.
+                // There is no safe way to remove our layer from an unknown
+                // wrapper chain, so leave the current method untouched.
+                if (owner[methodName] !== wrapper) {
+                    console.warn(`[arcmenu-pinyin] skip restore for ${methodName}: ` +
+                        'method changed after injection');
+                    continue;
+                }
+
+                if (hadOwn)
                     owner[methodName] = original;
                 else
                     delete owner[methodName];

@@ -12,6 +12,7 @@ import Gio from 'gi://Gio';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import {isPinyinLettersMonotonic} from './monotonic.js';
 
 const ARC_UUID = 'arcmenu@arcmenu.com';
 const PRODUCT_UUID = 'arcmenu-pinyin@ymt200120';
@@ -118,15 +119,7 @@ export default class ProbeExtension extends Extension {
         const gridButtons = layout._bucketJumpListDialog._grid.get_children().length;
         const letters = names.map(n => idx.letterForName(n));
 
-        let monotonic = true;
-        for (let i = 1; i < letters.length; i++) {
-            const a = letters[i - 1];
-            const b = letters[i];
-            if (a === b) continue;
-            if (a === '#') { monotonic = false; break; }
-            if (b === '#') continue;
-            if (a > b) { monotonic = false; break; }
-        }
+        const monotonic = isPinyinLettersMonotonic(letters);
 
         const targets = {};
         for (const [name, want] of [['微信', 'W'], ['腾讯会议', 'T'], ['哔哩哔哩', 'B'],

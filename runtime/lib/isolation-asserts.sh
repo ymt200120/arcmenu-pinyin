@@ -94,6 +94,24 @@ assert_isolation() {
     esac
     case "$DBUS_SESSION_BUS_ADDRESS" in
         *"runtime=yes"*|*"$XDG_RUNTIME_DIR"*) ;;
+        unix:path=/tmp/dbus-*)
+            # dbus-run-session normally creates a private socket in /tmp when
+            # the isolated XDG_RUNTIME_DIR cannot be used for the bus socket.
+            # Accept one socket path component only; reject nested paths.
+            _dbus_socket="${DBUS_SESSION_BUS_ADDRESS#unix:path=}"
+            _dbus_socket="${_dbus_socket%%,*}"
+            case "$_dbus_socket" in
+                /tmp/dbus-?*) ;;
+                *)
+                    echo "FATAL(isolation): invalid private /tmp dbus socket: $DBUS_SESSION_BUS_ADDRESS" >&2
+                    exit 42 ;;
+            esac
+            case "${_dbus_socket#/tmp/dbus-}" in
+                */*)
+                    echo "FATAL(isolation): private /tmp dbus socket is nested: $DBUS_SESSION_BUS_ADDRESS" >&2
+                    exit 42 ;;
+            esac
+            ;;
         *)
             echo "FATAL(isolation): session bus not private: $DBUS_SESSION_BUS_ADDRESS" >&2
             exit 42 ;;

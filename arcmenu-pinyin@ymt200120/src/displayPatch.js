@@ -11,7 +11,11 @@
 import St from 'gi://St';
 
 import {buildPopupEntries, maxColumnsFor, FIXED_BUCKETS} from './bucketGrid.js';
-import {sortEntriesByLetter} from './pinyinIndex.js';
+import {makeSortWrapper, pinyinGroupingEnabled} from './displayGate.js';
+
+// Keep the extension's existing import surface while the pure sort wrapper
+// lives with the testable display gate.
+export {makeSortWrapper};
 
 /**
  * @param {object} ctx 上下文：
@@ -21,40 +25,12 @@ import {sortEntriesByLetter} from './pinyinIndex.js';
  *   index      — createPinyinIndex() 实例
  *   log        — (msg: string) => void
  */
-export function makeSortWrapper(ctx) {
-    return original => function (...args) {
-        const list = original.apply(this, args);
-        if (!Array.isArray(list) || list.length === 0)
-            return list;
-
-        try {
-            const entries = list.map(app => ({
-                app,
-                name: ctx.utils.getAppDisplayName(app),
-            }));
-            return sortEntriesByLetter(entries, ctx.index.letterForName)
-                .map(entry => entry.app);
-        } catch (e) {
-            // 拼音层任何异常都退回官方排序结果，绝不让菜单失效
-            ctx.log(`sort wrapper failed, falling back to official order: ${e}`);
-            return list;
-        }
-    };
-}
-
 export function makeDisplayWrapper(ctx) {
     const {constants} = ctx;
     const ALL_PROGRAMS = constants.CategoryType.ALL_PROGRAMS;
 
     return original => function (apps, category, grid) {
-        const settings = ctx.getSettings();
-        const groupList = settings.get_boolean('group-apps-alphabetically-list-layouts');
-        const groupGrid = settings.get_boolean('group-apps-alphabetically-grid-layouts');
-        const isGrid = this.display_type === constants.DisplayType.GRID;
-        const isList = this.display_type === constants.DisplayType.LIST;
-
-        const grouped = category === ALL_PROGRAMS &&
-            ((groupList && isList) || (groupGrid && isGrid));
+        const grouped = category === ALL_PROGRAMS && pinyinGroupingEnabled(ctx, this);
 
         if (!grouped)
             return original.call(this, apps, category, grid);

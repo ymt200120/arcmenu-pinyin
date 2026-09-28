@@ -7,6 +7,7 @@
 const TEST_FILES = [
     './pinyin.test.mjs',
     './sort.test.mjs',
+    './display.test.mjs',
     './injection.test.mjs',
     './integration.test.mjs',
     './bucketgrid.test.mjs',

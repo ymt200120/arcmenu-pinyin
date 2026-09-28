@@ -53,3 +53,8 @@ if [ "${UNEXPECTED}" -ne 0 ]; then
 fi
 
 echo "包内文件数: ${FILE_COUNT}（metadata.json 位于 zip 根）"
+
+# 校验文件使用 zip 文件名，随输出目录移动后仍可在该目录内验证。
+ZIP_NAME="$(basename "${ZIP_PATH}")"
+( cd "${OUT_DIR}" && sha256sum "${ZIP_NAME}" > "${ZIP_NAME}.sha256" )
+echo "校验文件: ${ZIP_PATH}.sha256（在输出目录运行 sha256sum -c ${ZIP_NAME}.sha256）"

@@ -50,6 +50,50 @@ export const tests = [
         assert.deepStrictEqual(inst._createSortedAppsList(), ['a', 'b']);
     }],
 
+    ['injection: 继承方法还原后不残留 own 属性', () => {
+        const proto = AzLayout.prototype;
+        const mgr = new InjectionManager();
+        assert.ok(!Object.prototype.hasOwnProperty.call(proto, '_createSortedAppsList'));
+
+        assert.ok(mgr.overrideMethod(proto, '_createSortedAppsList',
+            original => function (...args) {
+                return original.apply(this, args).reverse();
+            }));
+        assert.ok(Object.prototype.hasOwnProperty.call(proto, '_createSortedAppsList'));
+
+        assert.strictEqual(mgr.clear(), 1);
+        assert.ok(!Object.prototype.hasOwnProperty.call(proto, '_createSortedAppsList'));
+    }],
+
+    ['injection: 外部替换或包裹后 clear 不覆盖外部方法', () => {
+        class ExternalLayout {
+            method() {
+                return 'official';
+            }
+        }
+
+        const proto = ExternalLayout.prototype;
+        const official = proto.method;
+        const mgr = new InjectionManager();
+        assert.ok(mgr.overrideMethod(proto, 'method',
+            original => function (...args) {
+                return `${original.apply(this, args)}:injected`;
+            }));
+        const injected = proto.method;
+
+        const external = function (...args) {
+            return `${injected.apply(this, args)}:external`;
+        };
+        proto.method = external;
+
+        assert.strictEqual(mgr.clear(), 0);
+        assert.strictEqual(proto.method, external);
+        assert.strictEqual(new ExternalLayout().method(), 'official:injected:external');
+
+        // Keep this test isolated if the implementation changes its clear path.
+        proto.method = official;
+    }],
+
     ['injection: 拒绝重复注入（防多层包裹）', () => {
         const mgr = new InjectionManager();
         const first = mgr.overrideMethod(BaseMenuLayout.prototype, '_displayAppList',

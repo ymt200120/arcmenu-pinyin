@@ -12,10 +12,38 @@
 set -u
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RUN="${AMP_RUN:-/tmp/amp-verify}"
 ARC_SRC="${1:-$HOME/.local/share/gnome-shell/extensions/arcmenu@arcmenu.com}"
 PRODUCT_UUID='arcmenu-pinyin@ymt200120'
 PROBE_UUID='probe-pinyin-check@ymt200120'
+
+# ---- 安全分配隔离目录 ----
+# AMP_RUN 只接受一个尚不存在的 /tmp 直接子目录。旧实现先递归删除
+# AMP_RUN，再创建目录；这会让一个拼写错误的 AMP_RUN 变成破坏性操作。
+RUN_REQUESTED="${AMP_RUN:-}"
+if [ -n "$RUN_REQUESTED" ]; then
+    case "$RUN_REQUESTED" in
+        /tmp/*) RUN_NAME="${RUN_REQUESTED#/tmp/}" ;;
+        *)
+            echo "拒绝 AMP_RUN：必须是 /tmp 下尚不存在的直接子目录: $RUN_REQUESTED" >&2
+            exit 2
+            ;;
+    esac
+
+    case "$RUN_NAME" in
+        ''|.|..|*/*)
+            echo "拒绝 AMP_RUN：必须是 /tmp 下尚不存在的直接子目录: $RUN_REQUESTED" >&2
+            exit 2
+            ;;
+    esac
+
+    RUN="$RUN_REQUESTED"
+    if [ -e "$RUN" ] || [ -L "$RUN" ]; then
+        echo "拒绝 AMP_RUN：目标已存在，不会清理或覆盖: $RUN" >&2
+        exit 2
+    fi
+else
+    RUN=''
+fi
 
 # ---- 捕获真实环境基准（进入沙箱前），供内层 fail-closed 断言比较 ----
 REAL_HOME="$HOME"
@@ -25,8 +53,22 @@ export REAL_HOME REAL_XDG_RUNTIME_DIR REAL_SESSION_BUS_ADDRESS
 
 [ -d "$ARC_SRC" ] || { echo "未找到 ArcMenu 扩展目录: $ARC_SRC"; exit 2; }
 
+# 默认使用 mktemp 原子创建唯一目录；显式 AMP_RUN 使用 mkdir 原子占用目标。
+# 目录一旦创建便保留，便于查阅 results.json、shell.log 与 cli.log。
+if [ -n "$RUN_REQUESTED" ]; then
+    if ! mkdir -m 700 -- "$RUN"; then
+        echo "无法创建 AMP_RUN（目标可能已被占用）: $RUN" >&2
+        exit 2
+    fi
+else
+    if ! RUN="$(mktemp -d /tmp/amp-verify.XXXXXX)"; then
+        echo '无法在 /tmp 创建唯一隔离目录' >&2
+        exit 2
+    fi
+fi
+echo ">>> 隔离运行目录: $RUN"
+
 # ---- 组装隔离环境 ----
-rm -rf "$RUN"
 mkdir -p "$RUN/data/gnome-shell/extensions" "$RUN/data/applications" \
          "$RUN/home" "$RUN/config/dconf" "$RUN/cache" "$RUN/runtime"
 chmod 700 "$RUN/runtime"
@@ -120,9 +162,9 @@ chmod +x "$RUN/inner.sh"
 
 # ---- 运行 ----
 echo ">>> 在隔离会话中启动 gnome-shell --headless ..."
-# 私有会话总线：dbus-run-session 在 XDG_RUNTIME_DIR（沙箱私有目录）内
-# 创建 bus socket；显式剔除可能残留的真实总线地址。
-env -u DBUS_SESSION_BUS_ADDRESS XDG_RUNTIME_DIR="$RUN/runtime" \
+# 私有会话总线：dbus-run-session 创建新 bus socket（可能位于 /tmp）；
+# 显式剔除可能残留的真实总线地址，内层再验证实际地址。
+env -u DBUS_SESSION_BUS_ADDRESS XDG_RUNTIME_DIR="$RUN/runtime" AMP_RUN="$RUN" \
     dbus-run-session -- bash "$RUN/inner.sh" 2>&1 | grep -E 'isolated env|cli:|TIMEOUT' || true
 
 # ---- 评估结果 ----
@@ -150,7 +192,7 @@ chk(s1, 'phase1 缺失（产品注入态未验证）')
 if s1:
     chk(s1.get('converged'), 'phase1: 轮询未收敛（未见拼音分桶）')
     chk(s1.get('layoutFound'), 'phase1: 未找到活的布局实例')
-    chk(s1.get('allPinyinBuckets'), f"phase1: 分桶非纯 A-Z: {s1.get('buckets')}")
+    chk(s1.get('allPinyinBuckets'), f"phase1: 分桶非 #/A-Z: {s1.get('buckets')}")
     chk(s1.get('monotonic'), 'phase1: 字母序列非单调')
     chk(s1.get('appCount', 0) > 10, 'phase1: 应用数量异常')
     for name, info in (s1.get('targets') or {}).items():
@@ -179,14 +221,14 @@ if failures:
     for f in failures:
         print('  -', f)
     sys.exit(1)
-print('\nEVAL PASS: 注入态 A-Z 分桶 / 禁用即恢复官方 / 再启用即恢复拼音 全部通过')
+print('\nEVAL PASS: 注入态 # + A-Z 分桶 / 禁用即恢复官方 / 再启用即恢复拼音 全部通过')
 PYEOF
 rc=$?
 
 echo '--- 非 DING 的 JS ERROR 数（期望 0）---'
 grep 'JS ERROR' "$RUN/shell.log" 2>/dev/null | grep -cv DING || true
 
-# 清理私有 runtime 目录（结果与日志保留在 $RUN 供查阅）
-rm -rf "$RUN/runtime"
+# 保留整个隔离目录（包括私有 runtime、结果与日志）供查阅；脚本不删除任何
+# AMP_RUN 指定的路径或其子目录。
 
 exit $rc

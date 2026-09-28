@@ -7,8 +7,9 @@
 `run-isolated-check.sh` 的运行方式：
 
 - 通过 `dbus-run-session` 启动**私有 DBus 会话**（与你正在使用的桌面会话完全隔离）；
-  会话总线 socket 与全部内层进程的 `XDG_RUNTIME_DIR` 指向沙箱内私有目录（0700），
-  不共享真实 `/run/user/<uid>`；
+  全部内层进程的 `XDG_RUNTIME_DIR` 指向沙箱内私有目录（0700），会话总线地址经过
+  断言确认不等于真实会话总线且不引用真实 `/run/user/<uid>`；`dbus-run-session`
+  在此环境中生成的 `/tmp/dbus-*` 私有 socket 也会被显式校验；
 - `HOME`/`XDG_DATA_HOME`/`XDG_CONFIG_HOME`/`XDG_CACHE_HOME` 全部指向 `/tmp` 下的临时目录；
 - 内层会话在**任何** dconf/gsettings/gnome-shell 操作之前执行 fail-closed 隔离断言
   （`lib/isolation-asserts.sh`：HOME、XDG_*、私有会话总线与真实环境逐一比对，
@@ -23,8 +24,9 @@
 
 加载真实 ArcMenu 70.0 + 真实本扩展 + 探针扩展（本目录 `probe-pinyin-check@ymt200120`），在 headless GNOME Shell 中自动完成：
 
-1. **phase1（注入态）**：所有应用按拼音 A-Z 分桶（BucketJump 键值纯字母）、桶序单调、
-   目标应用（微信→W、腾讯会议→T、哔哩哔哩→B、重庆银行→C、厦门银行→X）全部命中；
+1. **phase1（注入态）**：所有应用按拼音分到 `#` + A-Z 桶（`#` 在最前，BucketJump
+   固定 27 键）、桶序单调，目标应用（微信→W、腾讯会议→T、哔哩哔哩→B、重庆银行→C、
+   厦门银行→X）全部命中；
 2. **phase2（禁用恢复）**：通过 `gnome-extensions disable` 禁用本扩展后，
    BucketJump 立即回到官方分桶（原始首字符，含 CJK 桶）；
 3. **phase3（再启用恢复）**：`gnome-extensions enable` 后拼音分桶恢复。
@@ -40,7 +42,11 @@ runtime/run-isolated-check.sh
 runtime/run-isolated-check.sh /path/to/arcmenu@arcmenu.com
 ```
 
-输出 `EVAL PASS` 且退出码为 0 即全部通过；`/tmp/amp-verify/results.json` 保存完整阶段证据。
+输出 `EVAL PASS` 且退出码为 0 即全部通过；默认会创建唯一的
+`/tmp/amp-verify.XXXXXX` 目录并保存完整阶段证据（`results.json`、`shell.log`
+和 `cli.log`）。也可以通过 `AMP_RUN=/tmp/your-new-directory` 指定一个尚不存在的
+`/tmp` 直接子目录；已有目录、`$HOME`、`/` 以及其他路径都会在任何写入前拒绝。
+脚本不会清理或覆盖 `AMP_RUN` 指定的目录，运行结果可在该目录中查阅。
 
 ## 设计说明
 
