@@ -1,18 +1,25 @@
-# pinyin-pro — vendored copy provenance
+# pinyin-pro vendor notes
 
-本目录是 [pinyin-pro](https://github.com/zh-lx/pinyin-pro) 的 ESM 构建产物拷贝，
-供 ArcMenu Pinyin 扩展内嵌使用（GJS 无 npm 生态，采用 vendor 方式分发）。
+This directory contains the ESM build of [pinyin-pro](https://github.com/zh-lx/pinyin-pro)
+used by ArcMenu Pinyin. The extension vendors the build because GJS does not provide the
+normal npm runtime or package loading workflow.
 
-| 项 | 内容 |
+| Field | Details |
 | --- | --- |
-| 上游项目 | https://github.com/zh-lx/pinyin-pro |
-| 版本 | 3.29.3（依据本仓库 v1.0.0 记录；上游 ESM 构建未内嵌版本号字符串，无法从产物直接读取） |
-| 许可证 | MIT（见同目录 `LICENSE`，保留上游版权声明） |
-| 修改 | **内容未修改**（去 `\r` 后与 v1.0.0 时期经真机验证的拷贝逐行一致）。行尾说明：上游原始产物为 CRLF/LF 混合行尾；本仓库因 `core.autocrlf=input` 在入库时规范化为 LF，CI 与源码构建产物因此均为 LF 形态，JS 语义不变 |
-| 形式 | 上游 ESM 构建产物：`index.mjs` + `data/`（词典分片）、`common/`（分词等）、`core/`（转换逻辑）；纯 JS，无 Node 专属 API、无 GJS 之外的依赖 |
-| 引用方式 | 仅 `src/pinyinIndex.js` 通过相对路径 `import {pinyin} from '../vendor/pinyin-pro/index.mjs'` 引用 |
+| Upstream project | <https://github.com/zh-lx/pinyin-pro> |
+| Version | 3.29.3. The upstream ESM build does not embed a version string; this is the version recorded for the copy used by the project. |
+| License | MIT; see [`LICENSE`](LICENSE), which retains the upstream copyright and license text. |
+| Changes | No functional changes were made to the vendored code in this repository. CRLF/LF line endings were normalized to LF when the files were committed (`core.autocrlf=input`); this does not change JavaScript behavior. |
+| Layout | `index.mjs`, dictionary shards under `data/`, tokenization helpers under `common/`, and conversion code under `core/`. The build is plain JavaScript and has no Node-only API. |
+| Import | `src/pinyinIndex.js` imports `pinyin` from `../vendor/pinyin-pro/index.mjs`; no other project code imports the vendor directly. |
 
-## 更新方式
+## Updating the copy
 
-从上游 release 下载对应版本的 ESM 构建产物，整目录替换本目录（保留本文件并更新版本号），
-然后运行 `node tests/run-tests.mjs && gjs -m tests/run-tests.mjs` 回归拼音映射用例。
+Download the matching ESM build from an upstream release and replace the contents of this
+directory. Keep this file and update the version entry above. From the repository root, run
+the Node and GJS test suites before committing the replacement:
+
+```bash
+node tests/run-tests.mjs
+gjs -m tests/run-tests.mjs
+```

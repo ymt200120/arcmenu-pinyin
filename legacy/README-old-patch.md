@@ -1,12 +1,14 @@
 # ArcMenu Alphabet Jump List
 
+> 历史存档：本文记录旧的覆盖式补丁，安装命令和上游 MR 状态已过时，请勿按本文操作。当前扩展请看 [项目 README](../README.md)。
+
 Windows 10/11 风格的字母快速跳转 + az 布局拼音分组，为 [ArcMenu](https://gitlab.com/arcmenu/ArcMenu)（GNOME Shell 扩展）打造的补丁套件。
 
 > **状态**：v1.0.0 ｜ 上游 MR 准备中（MR 合并后本仓库将只剩拼音分组部分）
 
 ## 功能演示
 
-![Alphabet Jump List 演示](docs/demo.gif)
+![Alphabet Jump List 演示](demo.gif)
 
 *点击"所有应用"列表中的字母分组标题 → 弹出 A-Z 面板 → 点击目标字母 → 列表滚动到对应分组*
 

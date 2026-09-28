@@ -1,163 +1,171 @@
 # ArcMenu Pinyin
 
-为官方 [ArcMenu](https://gitlab.com/arcmenu/ArcMenu)（GNOME Shell 扩展）提供**中文拼音首字母分组**的独立扩展。安装启用后，ArcMenu"所有应用"列表中的中文应用将按拼音首字母归入 A-Z 分组，并直接复用 ArcMenu 70.0 官方 Bucket Jump 弹窗进行 A-Z 快速跳转：
+[English](README.en.md)
 
-- 微信 → **W**
-- 腾讯会议 → **T**
-- 哔哩哔哩 → **B**
-- 重庆银行 → **C**（多音字按词定音）
+ArcMenu Pinyin 是一个独立的第三方 GNOME Shell 扩展，为官方 [ArcMenu](https://gitlab.com/arcmenu/ArcMenu) 的“所有应用”视图增加中文拼音首字母分组。
 
-**不修改 ArcMenu 的任何文件**；禁用/卸载本扩展后，ArcMenu 立即恢复官方行为，无需注销重登。
+例如：
 
-> **独立性声明**：本项目是独立的第三方扩展，与 ArcMenu 官方无隶属关系；ArcMenu 官方未集成、也未认证本扩展。
-> 历史上本仓库的 Alphabet Jump List 曾以 [MR !284](https://gitlab.com/arcmenu/ArcMenu/-/merge_requests/284) 贡献进入 ArcMenu 上游
-> （官方更名为 Bucket Jump List），本扩展在运行时复用该官方组件，但这不构成本扩展获得官方认证。
+- 微信 → `W`
+- 腾讯会议 → `T`
+- 哔哩哔哩 → `B`
+- 重庆银行 → `C`（按词库处理多音字）
 
-English: [README.en.md](README.en.md)
+扩展只在运行时包裹 ArcMenu 的相关方法，不修改 ArcMenu 目录中的文件。禁用扩展时会撤销这些包裹并重建当前菜单视图。它与 ArcMenu 没有隶属关系，也没有得到 ArcMenu 官方认证或背书。
 
-## 功能演示
+本仓库早期的 Alphabet Jump List 曾通过 [MR !284](https://gitlab.com/arcmenu/ArcMenu/-/merge_requests/284) 合入 ArcMenu 上游；上游现在称它为 Bucket Jump List。本扩展运行时复用该组件的结构和跳转行为，同时为跳转面板提供固定键位。
+
+## 功能
+
+- 仅接管 ArcMenu“所有应用”视图，并且需要开启 ArcMenu 的“按字母分组应用”设置。固定应用、分类和搜索等路径继续使用 ArcMenu 的实现。
+- 应用列表按 `#`、`A`–`Z` 分桶，`#` 始终排在最前面。以数字或标点开头的名称进入 `#` 桶。
+- 跳转面板固定显示 27 个键：`#` 加 `A`–`Z`。扩展包裹 `BucketJumpListDialog.populateMenu` 来生成这些键，点击跳转仍使用 ArcMenu 的滚动逻辑；没有对应应用的字母会置灰并且不可点击，因此应用增删不会改变键位顺序。
+- 拼音转换使用内嵌的 [pinyin-pro](https://github.com/zh-lx/pinyin-pro) 3.29.3（MIT）。整串分词后取首字母，可以处理“重庆”→`C`、“厦门”→`X`这类常见多音字。
+- 启用前会检查 ArcMenu 的模块结构，并只允许当前已验证的 ArcMenu 主版本 70。检查或版本门控未通过时，扩展记录诊断日志，不进行注入。
+
+历史补丁时期录制的跳转面板示例：
 
 ![历史演示：A-Z 跳转面板](legacy/demo.gif)
-*历史演示图（v1.0.0 前补丁时期录制，展示现为 ArcMenu 官方功能的 A-Z 跳转面板；欢迎补充 v1.1.0 的 27 键固定面板截图）*
 
-## 工作原理（一图流）
+该图片来自 v1.0.0 之前的补丁版本，不展示当前的固定 27 键面板。
 
-```
-┌──────────────────────────── GNOME Shell ────────────────────────────┐
-│  ArcMenu（官方，未修改）              ArcMenu Pinyin（本扩展）        │
-│  ┌────────────────────┐              ┌──────────────────────────┐   │
-│  │ BaseMenuLayout      │   原型方法   │ 启用时临时包裹两个方法：    │   │
-│  │  _createSortedApps  │◄──覆写────  │  · 排序：拼音字母优先      │   │
-│  │  _displayAppList    │◄──覆写────  │  · 分组：分桶字母=拼音首字母│   │
-│  └────────────────────┘              └──────────────────────────┘   │
-│  BucketJumpListDialog（官方）◄── 直接注册拼音字母，跳转全部官方实现   │
-└─────────────────────────────────────────────────────────────────────┘
-```
+## 环境要求与兼容性
 
-- 本扩展通过 `Main.extensionManager.lookup()` 定位运行中的 ArcMenu，按绝对 URI 导入其 ES 模块（GJS 按 URI 缓存模块 → 拿到的是**同一个类对象**），对 `BaseMenuLayout.prototype` 的两个方法做临时覆写；
-- 只接管"所有应用 + 已开启字母分组"视图；固定应用、分类、搜索等路径全部走官方原实现；
-- 拼音转换使用内嵌的 [pinyin-pro](https://github.com/zh-lx/pinyin-pro)（MIT），整串分词转换取首字母，可修正首字多音字（重庆→C、厦门→X）；
-- **兼容性门控**：注入前对 ArcMenu 的模块结构做逐项审计，且仅信任已验证的 ArcMenu 大版本（70.x）。审计不通过或版本未知 → 拒绝注入并输出诊断日志，ArcMenu 保持官方行为不受任何影响；
-- 禁用本扩展时精确还原原型方法并触发 ArcMenu 重建视图，立即恢复官方效果。
-
-## 环境要求
-
-| 组件 | 要求 |
+| 组件 | 当前信息 |
 | --- | --- |
-| GNOME Shell | 45–49（**46 实测验证**，见下方兼容性表） |
-| ArcMenu | **70.0**（其他版本：结构审计通过且在已验证列表内才注入） |
-| 分组设置 | ArcMenu 设置 "Group apps alphabetically"（列表/网格）保持开启 |
+| GNOME Shell | 元数据声明支持 45–49；目前已完成的完整运行时验证为 46.0 |
+| ArcMenu | 70.x；ArcMenu 70.0（version 74）已在 GNOME Shell 46.0 / Ubuntu 24.04 上验证 |
+| ArcMenu 设置 | “Group apps alphabetically”（列表或网格）需要开启 |
+
+GNOME Shell 45、47、48、49，以及 ArcMenu 70.x 的其他小版本尚未完成运行时实测。ArcMenu 其他主版本当前不会注入。拼音多音字的结果取决于 pinyin-pro 词库，冷门专名可能落入意料之外的字母桶；这只影响分组位置。 GNOME 在禁用扩展时可能短暂循环其后的扩展；本扩展可以处理这种重复的生命周期回调。
 
 ## 安装
 
-方式一（脚本，推荐）：
+先安装并启用官方 ArcMenu。
+
+### 从源码安装
+
+在终端中进入你准备存放仓库的目录，执行：
 
 ```bash
 git clone https://github.com/ymt200120/arcmenu-pinyin.git
 cd arcmenu-pinyin
-scripts/install.sh          # 只写入本扩展自己的目录
-# 注销重新登录（Wayland 必须），然后：
+scripts/install.sh
+```
+
+安装脚本只写入 `arcmenu-pinyin@ymt200120` 自己的扩展目录。安装完成后先注销并重新登录（Wayland 会话必须；更新代码后也需要），然后启用扩展：
+
+```bash
 gnome-extensions enable arcmenu-pinyin@ymt200120
 ```
 
-方式二（手动）：
+### 使用 zip 安装
+
+可以从 [GitHub Releases](https://github.com/ymt200120/arcmenu-pinyin/releases) 下载 zip，也可以从源码仓库构建。下面的 `scripts/build.sh` 只适用于源码仓库：
 
 ```bash
-scripts/build.sh            # 生成 dist/arcmenu-pinyin-v1.1.0.zip
+scripts/build.sh
+```
+
+然后使用下载的或刚生成的 zip：
+
+```bash
+# 下载 release zip 时，把 ZIP_PATH 改为该文件的路径
+ZIP_PATH=dist/arcmenu-pinyin-v1.1.0.zip
 mkdir -p ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
-unzip dist/arcmenu-pinyin-v1.1.0.zip -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
-# 注销重新登录（Wayland 必须），然后：
-gnome-extensions enable arcmenu-pinyin@ymt200120
+unzip "$ZIP_PATH" \
+  -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
 ```
 
-> 禁止 `curl … | bash` 之类的远程脚本直装；请从 GitHub Releases 下载 zip 或自行构建。
-
-## 更新 / 启用 / 禁用
-
-- **更新**：下载新版 zip（或 `git pull` 后）重新执行 `scripts/install.sh`——它会覆盖本扩展自身目录并保留你的 ArcMenu 设置；代码更新后需**注销重登**一次（GNOME 平台的模块缓存限制，所有扩展皆如此）；
-- **禁用**：`gnome-extensions disable arcmenu-pinyin@ymt200120`（立即恢复官方行为）；
-- **启用**：`gnome-extensions enable arcmenu-pinyin@ymt200120`。
-
-## 卸载
+`scripts/build.sh` 还会为本地构建生成 `dist/arcmenu-pinyin-v1.1.0.zip.sha256`。如需校验，在 `dist/` 目录运行：
 
 ```bash
-scripts/uninstall.sh        # 只移除本扩展目录；ArcMenu 无需任何恢复操作
+cd dist
+sha256sum -c arcmenu-pinyin-v1.1.0.zip.sha256
 ```
 
-## 已验证兼容性
+解压后先注销并重新登录（Wayland 会话必须），然后运行上面的 `gnome-extensions enable` 命令。
 
-| ArcMenu | GNOME Shell | 结果 |
-| --- | --- | --- |
-| 70.0 (version 74) | 46.0 (Ubuntu 24.04) | ✅ 注入/分桶/跳转/禁用恢复/再启用恢复 全部通过（隔离实机验证，见 `docs/verification/`） |
-| 70.x 其他小版本 | 45/47/48/49 | ⚠️ 未实测；结构审计 + 版本门控保护，不通过则安全拒绝 |
+## 更新、启用、禁用与卸载
 
-已知行为：
+更新方式取决于安装来源：
 
-- 多音字按 pinyin-pro 词库处理，未收录的冷门词可能归入非预期字母（仅影响分组位置，不影响使用）；
-- 数字、标点开头的名称进入 `#` 桶，置于列表**最前**（Windows 式）；跳转面板固定显示 # + A–Z 共 27 键，无应用的字母置灰不可点，键位不随应用增删漂移；
-- GNOME 在禁用"任何扩展"时会临时循环其后启用的扩展（rebase 机制，`_callExtensionDisable` 的防冲突设计），本扩展的状态机对此幂等，无副作用。
+- 从源码仓库安装：拉取新代码后再次运行 `scripts/install.sh`。
+- 只下载或构建 zip：将新 zip 解压覆盖到同一个扩展目录。例如在仓库中构建时：
 
-## 问题反馈
+  ```bash
+  unzip -o dist/arcmenu-pinyin-v1.1.0.zip \
+    -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
+  ```
 
-[GitHub Issues](https://github.com/ymt200120/arcmenu-pinyin/issues) —— 提交时请附上
-`journalctl --user -b | grep arcmenu-pinyin` 的输出与复现步骤。
+更新代码后请注销并重新登录一次，让 GNOME Shell 重新加载模块。
+
+启用或禁用：
+
+```bash
+gnome-extensions enable arcmenu-pinyin@ymt200120
+gnome-extensions disable arcmenu-pinyin@ymt200120
+```
+
+禁用时扩展会撤销运行时注入并恢复 ArcMenu 的官方路径。
+
+从源码仓库安装的用户可以运行：
+
+```bash
+scripts/uninstall.sh
+```
+
+如果只有 zip 安装包，则运行下面的命令删除本扩展目录：
+
+```bash
+gnome-extensions disable arcmenu-pinyin@ymt200120
+rm -rf ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
+```
+
+两种方式都只删除本扩展目录，不需要恢复 ArcMenu 文件。如果之前启用过本扩展，卸载后建议注销并重新登录一次。
 
 ## 故障排查
 
-1. 查看诊断日志（本扩展所有输出带 `[arcmenu-pinyin]` 前缀）：
-
-   ```bash
-   journalctl --user -b | grep 'arcmenu-pinyin'
-   ```
-
-2. 常见日志：
-
-   | 日志 | 含义 |
-   | --- | --- |
-   | `injected into ArcMenu 70.0` | 注入成功，功能生效 |
-   | `failed structure audit — refusing to inject` | ArcMenu 结构与已审计版本不一致（升级/魔改），安全拒绝；请提 issue 附完整日志 |
-   | `is not verified yet` | ArcMenu 版本不在已验证列表，等待适配 |
-   | `injection removed (N method(s) restored)` | 已还原官方行为（随禁用/卸载） |
-
-3. 没有效果时依次确认：ArcMenu 为 70.0 且在运行（`gnome-extensions info arcmenu@arcmenu.com`）；本扩展已启用；ArcMenu 设置中"按字母分组应用"已开启；当前视图是"所有应用"。
-
-## 开发与测试
+查看本扩展的诊断日志：
 
 ```bash
-node tests/run-tests.mjs    # 拼音/排序/注入管理器（Node 20+）
-gjs -m tests/run-tests.mjs  # 同一套测试跑在 GJS（与 Shell 同运行时）
-runtime/run-isolated-check.sh   # 隔离 headless GNOME Shell 端到端验证（需本机装有 ArcMenu 70）
-scripts/build.sh            # 构建发布 zip
+journalctl --user -b | grep 'arcmenu-pinyin'
 ```
 
-`runtime/run-isolated-check.sh` 会在独立 DBus 会话 + 独立 HOME/XDG 目录中启动 `gnome-shell --headless`，加载真实 ArcMenu + 本扩展 + 探针，自动验证"注入 → CLI 禁用 → 官方行为恢复 → 再启用 → 拼音恢复"全链路，不触碰日常桌面。详见 `runtime/README.md`。
+常见信息包括：
 
-## 项目结构
+- `injected into ArcMenu 70.0`：注入已完成。
+- `failed structure audit — refusing to inject`：ArcMenu 内部结构与当前审计基准不符，扩展没有注入。
+- `is not verified yet`：ArcMenu 主版本不在当前允许列表中。
+- `injection removed (N method(s) restored)`：运行时方法已撤销。
 
+没有效果时，依次确认 ArcMenu 正在运行（`gnome-extensions info arcmenu@arcmenu.com`）、本扩展已启用、分组设置已开启，并且当前位于“所有应用”视图。提交 [GitHub Issues](https://github.com/ymt200120/arcmenu-pinyin/issues) 时，请附上日志输出和复现步骤。
+
+## 开发与验证
+
+```bash
+node tests/run-tests.mjs       # Node 20+
+gjs -m tests/run-tests.mjs     # 在 GJS 中运行同一套测试
+scripts/build.sh               # 构建发布 zip 和 sha256 校验文件
+runtime/run-isolated-check.sh  # 隔离的 headless GNOME Shell 验证
 ```
-arcmenu-pinyin@ymt200120/   扩展源码
-├── extension.js            入口：生命周期状态机
-├── src/compat.js           ArcMenu 检测 + 结构审计 + 版本门控
-├── src/injection.js        注入管理器（防重复注入、精确还原）
-├── src/displayPatch.js     排序/分组包装器（官方路径的复刻与替换）
-├── src/pinyinIndex.js      拼音索引纯逻辑（Node/GJS 双跑测试）
-└── vendor/pinyin-pro/      pinyin-pro v3.29.3（MIT）
-tests/                      Node + GJS 双跑测试
-runtime/                    隔离 headless Shell 端到端验证套件
-scripts/                    安装/卸载/构建
-docs/                       兼容性表、验证证据、故障排查
-legacy/                     旧覆盖式补丁（已被上游 MR !284 取代，仅存档）
+
+`runtime/run-isolated-check.sh` 需要本机已有 ArcMenu 70.x。它使用独立 DBus 会话以及临时的 `HOME`/XDG 目录启动 headless GNOME Shell，验证注入、禁用后的官方行为、再次启用后的拼音分组；结果保存在脚本创建的临时目录中。详见 [runtime/README.md](runtime/README.md)。
+
+主要目录：
+
+```text
+arcmenu-pinyin@ymt200120/  扩展源码和内嵌的 pinyin-pro
+tests/                     Node/GJS 测试
+runtime/                   隔离的 headless Shell 验证
+scripts/                   安装、卸载和构建脚本
+docs/                      兼容性与验证记录
+legacy/                    旧覆盖式补丁，仅作存档
 ```
 
-## 致谢与贡献
+## 致谢与许可
 
-- 项目需求、设计决策与全部真机验收由 [ymt200120](https://github.com/ymt200120) 主导；
-- 代码实现由 AI coding agent（ZCode / GLM）在上述需求、验收标准与安全约束下协作完成；
-- 拼音转换依赖 [pinyin-pro](https://github.com/zh-lx/pinyin-pro) v3.29.3（MIT，来源与修改声明见 `arcmenu-pinyin@ymt200120/vendor/pinyin-pro/PROVENANCE.md`）；
-- Alphabet Jump List 由 ymt200120 设计并实现，经 [MR !284](https://gitlab.com/arcmenu/ArcMenu/-/merge_requests/284) 进入 ArcMenu 官方。
-
-## License
-
-- 本项目代码：**GPL-2.0**（衍生自 ArcMenu 项目，见 `LICENSE`）
-- `vendor/pinyin-pro/`：MIT（© zh-lx，见 `vendor/pinyin-pro/LICENSE`）
-- 历史：Alphabet Jump List 部分已通过上游 [MR !284](https://gitlab.com/arcmenu/ArcMenu/-/merge_requests/284) 进入 ArcMenu 70.0；本仓库 `legacy/` 保留旧覆盖式补丁存档。
+- 需求、设计决策和真机验收由 [ymt200120](https://github.com/ymt200120) 主导。
+- 代码在 AI coding agent（ZCode / GLM）协助下完成。
+- 拼音转换使用 [pinyin-pro](https://github.com/zh-lx/pinyin-pro) v3.29.3，许可证为 MIT；来源说明见 [`PROVENANCE.md`](arcmenu-pinyin@ymt200120/vendor/pinyin-pro/PROVENANCE.md)。
+- 本项目代码使用 GPL-2.0，完整文本见 [`LICENSE`](LICENSE)。`vendor/pinyin-pro/` 保留其 MIT 许可证和版权声明。

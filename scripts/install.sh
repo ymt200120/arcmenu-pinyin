@@ -25,7 +25,7 @@ echo "已安装到: ${TARGET}"
 ARC_DIR="${HOME}/.local/share/gnome-shell/extensions/arcmenu@arcmenu.com"
 ARC_DIR_SYSTEM="/usr/share/gnome-shell/extensions/arcmenu@arcmenu.com"
 if [ ! -d "${ARC_DIR}" ] && [ ! -d "${ARC_DIR_SYSTEM}" ]; then
-    echo "警告: 未找到官方 ArcMenu 扩展。本扩展依赖 ArcMenu 70.0+，"
+    echo "警告: 未找到官方 ArcMenu 扩展。本扩展目前只对 ArcMenu 70.x 尝试注入，"
     echo "      请先安装并启用 ArcMenu，再启用本扩展。"
 fi
 

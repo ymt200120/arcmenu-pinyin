@@ -9,9 +9,8 @@ on:
   pull_request:
   workflow_dispatch:
 
-# 说明：GNOME runtime（headless shell）验证是人工 canary 流程的一部分
-# （见 runtime/README.md 与 CANARY-REPORT.md），刻意不在公开 CI 中执行，
-# 避免形成未经完整隔离证明的虚假验收信号。
+# headless GNOME 验证需本机 ArcMenu 和隔离会话，运行方式见 runtime/README.md。
+# 公开 CI 运行单元测试、隔离断言、探针逻辑测试和构建检查。
 
 jobs:
   test-node:

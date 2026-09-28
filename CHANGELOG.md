@@ -1,41 +1,44 @@
 # Changelog
 
-## arcmenu-pinyin 1.0.0 (2026-09-27)
+## Unreleased maintenance
 
-仓库由"覆盖式补丁套件"转型为独立扩展 `arcmenu-pinyin@ymt200120`。
+- runtime 验证默认使用唯一的 `/tmp/amp-verify.XXXXXX` 目录；显式 `AMP_RUN` 只接受尚不存在的
+  `/tmp` 直接子目录，不会清理或覆盖已有路径；
+- 隔离断言覆盖 `dbus-run-session` 可能创建的私有 `/tmp/dbus-*` socket；
+- `scripts/build.sh` 在 zip 旁生成 `.sha256` 校验文件，CI 会用它验证发布包；
+- 分组设置关闭时保留 ArcMenu 的官方排序和显示路径；
+- `InjectionManager` 精确还原注入前的方法，并避免覆盖注入期间出现的外部替换；
+- 探针单调性检查明确要求 `#` 位于字母之前，并覆盖错误顺序。
 
-### 新形态：独立扩展（不修改 ArcMenu 任何文件）
+## arcmenu-pinyin 1.1.0（2026-09-27）
 
-- 运行时集成：`Main.extensionManager.lookup()` 定位 ArcMenu → 按 URI 导入其 ES 模块
-  （GJS 模块缓存共享）→ 对 `BaseMenuLayout.prototype` 的
-  `_createSortedAppsList` / `_displayAppList` 做临时覆写；
-- 复用官方 Bucket Jump List：拼音字母直接注册进 `addBucketChar()`，
-  弹窗网格与点击跳转全部为官方实现；
-- 兼容性门控：结构审计（注入点逐项形状校验）+ ArcMenu 版本白名单（当前 70.x），
-  不通过即安全拒绝注入；
-- 生命周期状态机：ArcMenu 与本扩展的启用顺序无关；ArcMenu 禁用时自动撤除注入；
-  对 GNOME 扩展禁用 rebase 循环幂等；
-- 拼音转换升级：pinyin-pro 整串分词转换取首字母，首字多音字按词定音
-  （重庆银行→C 而非 Z、厦门银行→X 而非 S；旧补丁为仅转首字）。
+- `#` 分组移到列表最前。排序比较器负责这个顺序，ArcMenu 默认排序不变；
+- Bucket Jump 面板固定显示 `#` + A–Z 共 27 个键，`#` 位于 `A` 之前。没有应用的字母
+  置灰且不可点击，因此安装或卸载应用不会改变键位；
+- 运行时包装官方 `BucketJumpListDialog.populateMenu`，继续使用 ArcMenu 的网格列数
+  公式（27 个键时为 6 列 × 5 行）；
+- 新增 `src/bucketGrid.js` 和对应的键位、状态及网格逻辑测试；
 
-### 验证
+## arcmenu-pinyin 1.0.0（2026-09-27）
 
-- 单元测试 16 项：Node 与 GJS 双跑全通过（`tests/`）；
-- 隔离 headless GNOME Shell 46.0 + 真实 ArcMenu 70.0 端到端验证：
-  注入 → CLI 禁用 → 官方行为恢复 → 再启用 → 拼音恢复，全链路通过、
-  零 JS 错误（`runtime/run-isolated-check.sh`，证据见 `docs/verification/`）。
+这是第一个独立扩展版本。它不修改 ArcMenu 文件，运行时通过
+`Main.extensionManager.lookup()` 找到 ArcMenu，再按 URI 导入其 ES 模块，对
+`BaseMenuLayout.prototype` 的 `_createSortedAppsList` 和 `_displayAppList` 做临时包装。
 
-### 与上游的关系
+其他基础功能包括：
 
-- Alphabet Jump List 已通过上游 MR !284 合入 ArcMenu 70.0（官方名 Bucket Jump List）；
-- 旧覆盖式补丁（含旧 install.sh）移入 `legacy/` 仅作存档，禁止使用。
+- 复用 ArcMenu 的 Bucket Jump 列表，把拼音字母注册到 `addBucketChar()`；
+- 在注入前做结构审计和 ArcMenu 主版本白名单检查，审计或版本不匹配时跳过注入；
+- 在 ArcMenu 或本扩展的启用状态变化时管理注入和还原，并处理 GNOME 扩展禁用时的
+  rebase 周期；
+- 使用 pinyin-pro 对完整名称分词后取首字母，因此重庆银行→C、厦门银行→X；旧补丁
+  只转换第一个汉字。
 
-## arcmenu-pinyin 1.1.0 (2026-09-27)
+1.0.0 发布时，Node/GJS 测试和隔离 headless GNOME Shell 端到端流程均已通过；当时的
+运行证据保存在 `docs/verification/`。
 
-- `#` 组从列表末尾移至**最前**（Windows 式）——由扩展比较器决定，非 ArcMenu 默认行为；
-- 跳转面板（Bucket Jump）改为**固定 27 键**：`#` + A–Z 全量展示，`#` 在 `A` 之前，
-  无对应应用的字母**置灰且不可点击**（`reactive:false` + 40% 透明度）；
-  键位因此不随应用增删漂移（装新 H 应用不再使 H 之后字母后移）；
-- 实现：运行时覆写官方 `BucketJumpListDialog.populateMenu`（第三个注入点，
-  同一结构审计门控与注入生命周期）；网格列数沿用官方公式（27 → 6 列 × 5 行）；
-- 新增纯逻辑模块 `src/bucketGrid.js` 与 5 项双跑单测；`sort.test` 断言翻转（# 最前）。
+## 与上游的关系
+
+- Alphabet Jump List 已通过上游 [MR !284](https://gitlab.com/arcmenu/ArcMenu/-/merge_requests/284)
+  进入 ArcMenu 70.0，上游后来将其称为 Bucket Jump List；本项目在运行时复用该组件；
+- 旧的覆盖式补丁和安装脚本保留在 `legacy/` 中，只用于查阅，不应再使用。

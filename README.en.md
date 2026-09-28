@@ -1,144 +1,171 @@
 # ArcMenu Pinyin
 
-A standalone GNOME Shell extension that adds **Chinese pinyin alphabetical grouping** to the official [ArcMenu](https://gitlab.com/arcmenu/ArcMenu) extension. Once enabled, Chinese apps in ArcMenu's "All Apps" list are grouped under A-Z buckets by their pinyin first letter, reusing ArcMenu 70.0's official Bucket Jump popup for A-Z quick navigation:
+[中文文档](README.zh-CN.md)
 
-- 微信 (WeChat) → **W**
-- 腾讯会议 (Tencent Meeting) → **T**
-- 哔哩哔哩 (Bilibili) → **B**
-- 重庆银行 → **C** (polyphones resolved word-wise)
+ArcMenu Pinyin is an independent third-party GNOME Shell extension that groups Chinese app names by pinyin initial in the official [ArcMenu](https://gitlab.com/arcmenu/ArcMenu) **All Apps** view.
 
-**It never modifies ArcMenu's files.** Disable or uninstall this extension and ArcMenu instantly returns to stock behaviour — no re-login needed.
+Examples:
 
-> **Independence**: this is an independent third-party project, not affiliated with or endorsed by ArcMenu.
-> The Alphabet Jump List from this repository was upstreamed via [MR !284](https://gitlab.com/arcmenu/ArcMenu/-/merge_requests/284)
-> (renamed "Bucket Jump List" by upstream); this extension reuses that official component at runtime, which does not constitute endorsement.
+- 微信 → `W`
+- 腾讯会议 → `T`
+- 哔哩哔哩 → `B`
+- 重庆银行 → `C` (polyphones are resolved from the word)
 
-## Demo
+The extension wraps selected ArcMenu methods at runtime; it does not edit files in the ArcMenu installation. Disabling the extension removes the wrappers and rebuilds the current menu view. This project is independent of ArcMenu and is not affiliated with or endorsed by the ArcMenu project.
+
+The original Alphabet Jump List from this repository was upstreamed through [MR !284](https://gitlab.com/arcmenu/ArcMenu/-/merge_requests/284) and is now called Bucket Jump List upstream. ArcMenu Pinyin reuses that component's structure and navigation behavior while providing a fixed set of jump keys.
+
+## Features
+
+- Applies to ArcMenu's **All Apps** view when ArcMenu's “Group apps alphabetically” setting is enabled. Pinned apps, categories, and search continue through ArcMenu's own paths.
+- Sorts apps into `#` and `A`–`Z` buckets, with `#` first. Names beginning with a digit or punctuation mark go into `#`.
+- Keeps the jump panel at 27 keys: `#` followed by `A`–`Z`. The extension wraps `BucketJumpListDialog.populateMenu` to build these keys, while clicks still use ArcMenu's scrolling logic. Empty buckets are greyed out and cannot be clicked, so adding or removing an app does not move the other keys.
+- Uses the bundled [pinyin-pro](https://github.com/zh-lx/pinyin-pro) 3.29.3 library (MIT). Whole-name segmentation helps resolve common polyphones such as 重庆 → `C` and 厦门 → `X`.
+- Audits ArcMenu's module shape before injection and currently allows only the verified ArcMenu major version 70. If the audit or version gate fails, the extension logs the reason and leaves ArcMenu's code path alone.
+
+Historical jump-panel recording from the pre-v1.0.0 patch version:
 
 ![Historical demo: A-Z jump panel](legacy/demo.gif)
-*Historical recording (pre-v1.0.0 patch era) of the A-Z jump panel, now an official ArcMenu feature.*
 
-## How it works
+It does not show the current fixed 27-key panel.
 
-```
-┌──────────────────────────── GNOME Shell ────────────────────────────┐
-│  ArcMenu (official, untouched)        ArcMenu Pinyin (this ext)     │
-│  ┌────────────────────┐              ┌──────────────────────────┐   │
-│  │ BaseMenuLayout      │  prototype   │ While enabled, wraps 2    │   │
-│  │  _createSortedApps  │◄-override--  │  methods:                 │   │
-│  │  _displayAppList    │◄-override--  │  · sort: pinyin-first     │   │
-│  └────────────────────┘              │  · group: bucket letter    │   │
-│                                      │    from pinyin             │   │
-│  BucketJumpListDialog (official) ◄── registers pinyin letters;       │
-│                                       jump/scroll all official code │
-└─────────────────────────────────────────────────────────────────────┘
-```
+## Requirements and compatibility
 
-- Locates the running ArcMenu via `Main.extensionManager.lookup()` and imports its ES modules by absolute URI. GJS caches modules per URI, so we get **the exact same class objects** and a prototype method wrap affects live layout instances.
-- Only the "All Apps + alphabetical grouping enabled" view is taken over; pinned apps, categories and search paths keep using the official implementation.
-- Pinyin conversion uses the bundled [pinyin-pro](https://github.com/zh-lx/pinyin-pro) (MIT). Whole-string segmented conversion fixes first-character polyphones (重庆→C, 厦门→X).
-- **Compatibility gating**: before injecting, every integration point is structurally audited and the ArcMenu major version must be verified (70.x). On mismatch the extension refuses to inject, logs diagnostics, and ArcMenu stays 100% stock.
-- On disable, prototype methods are precisely restored and ArcMenu views are rebuilt, so the official behaviour returns immediately.
-
-## Requirements
-
-| Component | Requirement |
+| Component | Current information |
 | --- | --- |
-| GNOME Shell | 45–49 (**46 verified**, see compatibility table) |
-| ArcMenu | **70.0** (other versions: injected only if the structure audit passes AND the major version is verified) |
-| ArcMenu setting | "Group apps alphabetically" (list/grid) enabled |
+| GNOME Shell | Metadata declares 45–49; full runtime verification currently covers 46.0 |
+| ArcMenu | 70.x; ArcMenu 70.0 (version 74) was verified on GNOME Shell 46.0 / Ubuntu 24.04 |
+| ArcMenu setting | “Group apps alphabetically” must be enabled for the list or grid layout |
+
+GNOME Shell 45, 47, 48, and 49, along with other ArcMenu 70.x minor versions, have not had full runtime verification. Other ArcMenu major versions are not injected. Polyphone handling follows the pinyin-pro dictionary, so uncommon names may land in an unexpected bucket; this affects placement only. GNOME may temporarily cycle extensions enabled after the one being disabled; this extension handles those repeated lifecycle callbacks.
 
 ## Install
 
-Script (recommended):
+Install and enable the official ArcMenu extension first.
+
+### From a source checkout
+
+In a terminal, move to the directory where you want to keep the repository and run:
 
 ```bash
 git clone https://github.com/ymt200120/arcmenu-pinyin.git
 cd arcmenu-pinyin
-scripts/install.sh          # writes only this extension's own directory
-# Log out and back in (required on Wayland), then:
+scripts/install.sh
+```
+
+The install script writes only this extension's directory. After it finishes, log out and back in first (required on Wayland; also needed after updating code), then enable the extension:
+
+```bash
 gnome-extensions enable arcmenu-pinyin@ymt200120
 ```
 
-Manual:
+### Install from a zip
+
+Download a zip from [GitHub Releases](https://github.com/ymt200120/arcmenu-pinyin/releases), or build one from a source checkout. `scripts/build.sh` is only available in the source checkout:
 
 ```bash
-scripts/build.sh            # produces dist/arcmenu-pinyin-v1.1.0.zip
+scripts/build.sh
+```
+
+Then use the downloaded archive or the one just built:
+
+```bash
+# When using a release zip, set ZIP_PATH to its file path
+ZIP_PATH=dist/arcmenu-pinyin-v1.1.0.zip
 mkdir -p ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
-unzip dist/arcmenu-pinyin-v1.1.0.zip -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
-# Log out and back in (Wayland), then:
-gnome-extensions enable arcmenu-pinyin@ymt200120
+unzip "$ZIP_PATH" \
+  -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
 ```
 
-> No `curl … | bash` remote execution. Download the zip from GitHub Releases or build locally.
-
-## Update / Enable / Disable
-
-- **Update**: re-run `scripts/install.sh` with the new version (it replaces only this extension's own directory and keeps your ArcMenu settings); log out/in once afterwards (GNOME module-cache limitation, applies to all extensions);
-- **Disable**: `gnome-extensions disable arcmenu-pinyin@ymt200120`;
-- **Enable**: `gnome-extensions enable arcmenu-pinyin@ymt200120`.
-
-## Uninstall
+`scripts/build.sh` also writes `dist/arcmenu-pinyin-v1.1.0.zip.sha256` for a local build. To verify it from the output directory:
 
 ```bash
-scripts/uninstall.sh        # removes only this extension; ArcMenu needs no restoration
+cd dist
+sha256sum -c arcmenu-pinyin-v1.1.0.zip.sha256
 ```
 
-## Verified compatibility
+After extracting, log out and back in first (required on Wayland), then run the `gnome-extensions enable` command above.
 
-| ArcMenu | GNOME Shell | Result |
-| --- | --- | --- |
-| 70.0 (version 74) | 46.0 (Ubuntu 24.04) | ✅ inject / buckets / jump / disable-restore / re-enable-restore all pass (isolated headless verification, see `docs/verification/`) |
-| other 70.x | 45/47/48/49 | ⚠️ untested; structure audit + version gate protect the shell, otherwise safely refuses |
+## Update, enable, disable, and uninstall
 
-Notes:
+The update command depends on how the extension was installed:
 
-- Polyphones rely on pinyin-pro's built-in dictionary; rare proper nouns may land on an unexpected letter (or in `#`) — grouping position only, functionality unaffected.
-- Names starting with digits/punctuation go to the `#` bucket placed **first** (Windows-style); the jump popup always shows all `#` + A–Z keys (27), with empty buckets greyed out and non-clickable, so key positions never drift.
-- GNOME temporarily cycles extensions enabled after the one being disabled ("rebase"); this extension's state machine is idempotent under such cycles.
+- From a source checkout, pull the new code and run `scripts/install.sh` again.
+- From a zip, extract the new archive over the same extension directory. For a locally built archive:
 
-## Feedback
+  ```bash
+  unzip -o dist/arcmenu-pinyin-v1.1.0.zip \
+    -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
+  ```
 
-[GitHub Issues](https://github.com/ymt200120/arcmenu-pinyin/issues) — please include
-the output of `journalctl --user -b | grep arcmenu-pinyin` and reproduction steps.
+Log out and back in after updating code so GNOME Shell reloads the modules.
+
+Enable or disable:
+
+```bash
+gnome-extensions enable arcmenu-pinyin@ymt200120
+gnome-extensions disable arcmenu-pinyin@ymt200120
+```
+
+Disabling removes the runtime injection and returns the active ArcMenu view to its official path.
+
+For a source checkout, run:
+
+```bash
+scripts/uninstall.sh
+```
+
+If you installed from a zip, remove the extension directory with:
+
+```bash
+gnome-extensions disable arcmenu-pinyin@ymt200120
+rm -rf ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
+```
+
+Both methods remove only this extension's directory; ArcMenu files do not need to be restored. If the extension was enabled, log out and back in after uninstalling to clear any remaining runtime state.
 
 ## Troubleshooting
 
-All diagnostics are prefixed with `[arcmenu-pinyin]`:
+View this extension's diagnostic messages with:
 
 ```bash
 journalctl --user -b | grep 'arcmenu-pinyin'
 ```
 
-| Log | Meaning |
-| --- | --- |
-| `injected into ArcMenu 70.0` | injection active |
-| `failed structure audit — refusing to inject` | ArcMenu internals differ from the audited version (upgrade/mod) — safe refusal; please open an issue with the full log |
-| `is not verified yet` | ArcMenu version not in the verified list yet |
-| `injection removed (N method(s) restored)` | official behaviour restored (on disable/uninstall) |
+Common messages:
 
-If nothing happens, check in order: ArcMenu is 70.0 and running (`gnome-extensions info arcmenu@arcmenu.com`); this extension is enabled; ArcMenu's "Group apps alphabetically" is on; you are in the "All Apps" view.
+- `injected into ArcMenu 70.0`: injection completed.
+- `failed structure audit — refusing to inject`: ArcMenu's internals do not match the audited shape, so no injection was applied.
+- `is not verified yet`: the ArcMenu major version is not currently allowed.
+- `injection removed (N method(s) restored)`: the runtime methods were removed.
 
-## Development
+If nothing changes, check that ArcMenu is running (`gnome-extensions info arcmenu@arcmenu.com`), this extension is enabled, alphabetical grouping is enabled, and you are in **All Apps**. When opening a [GitHub Issue](https://github.com/ymt200120/arcmenu-pinyin/issues), include the log output and reproduction steps.
+
+## Development and verification
 
 ```bash
-node tests/run-tests.mjs    # pinyin/sort/injection tests (Node 20+)
-gjs -m tests/run-tests.mjs  # the same suite on GJS (same runtime as the Shell)
-runtime/run-isolated-check.sh   # isolated headless GNOME Shell end-to-end verification
-scripts/build.sh            # build release zip
+node tests/run-tests.mjs       # Node 20+
+gjs -m tests/run-tests.mjs     # run the same suite under GJS
+scripts/build.sh               # build the release zip and sha256 file
+runtime/run-isolated-check.sh  # isolated headless GNOME Shell check
 ```
 
-`runtime/run-isolated-check.sh` boots `gnome-shell --headless` inside a private DBus session with isolated HOME/XDG directories, loads the real ArcMenu + this extension + a probe, and verifies "inject → CLI disable → stock restored → re-enable → pinyin restored" end to end without touching your desktop. See `runtime/README.md`.
+`runtime/run-isolated-check.sh` requires ArcMenu 70.x to be installed locally. It starts headless GNOME Shell with a private DBus session and temporary `HOME`/XDG directories, then checks injection, the official behavior after disable, and pinyin grouping after re-enable. Results are kept in the temporary directory created by the script. See [runtime/README.md](runtime/README.md).
 
-## Credits
+Directory overview:
 
-- Requirements, design decisions and all on-device acceptance led by [ymt200120](https://github.com/ymt200120);
-- Code implemented by an AI coding agent (ZCode / GLM) under those requirements, acceptance criteria and safety constraints;
-- Pinyin conversion uses [pinyin-pro](https://github.com/zh-lx/pinyin-pro) v3.29.3 (MIT, see `arcmenu-pinyin@ymt200120/vendor/pinyin-pro/PROVENANCE.md`);
-- Alphabet Jump List was designed/implemented by ymt200120 and upstreamed via [MR !284](https://gitlab.com/arcmenu/ArcMenu/-/merge_requests/284).
+```text
+arcmenu-pinyin@ymt200120/  extension source and bundled pinyin-pro
+tests/                     Node/GJS tests
+runtime/                   isolated headless Shell verification
+scripts/                   install, uninstall, and build scripts
+docs/                      compatibility and verification records
+legacy/                    archived overlay patches
+```
 
-## License
+## Credits and license
 
-- This project: **GPL-2.0** (derivative of ArcMenu, see `LICENSE`)
-- `vendor/pinyin-pro/`: MIT (© zh-lx, see `vendor/pinyin-pro/LICENSE`)
-- History: the Alphabet Jump List part landed upstream via [MR !284](https://gitlab.com/arcmenu/ArcMenu/-/merge_requests/284) and ships in ArcMenu 70.0; the old overlay patches are archived under `legacy/`.
+- Requirements, design decisions, and on-device acceptance were led by [ymt200120](https://github.com/ymt200120).
+- Code was developed with assistance from an AI coding agent (ZCode / GLM).
+- Pinyin conversion uses [pinyin-pro](https://github.com/zh-lx/pinyin-pro) v3.29.3 under the MIT license; see [`PROVENANCE.md`](arcmenu-pinyin@ymt200120/vendor/pinyin-pro/PROVENANCE.md) for source details.
+- This project's code is GPL-2.0; see [`LICENSE`](LICENSE). The vendored `pinyin-pro` files retain their MIT license and copyright notice.
