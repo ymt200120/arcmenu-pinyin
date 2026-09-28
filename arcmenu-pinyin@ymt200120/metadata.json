@@ -4,7 +4,7 @@
     "description": "Pinyin alphabetical grouping and A-Z Bucket Jump for ArcMenu's All Apps list (Chinese app names: 微信→W, 腾讯会议→T, 哔哩哔哩→B). Requires the official ArcMenu extension. Does not modify ArcMenu files; disabling restores stock behaviour instantly.",
     "url": "https://github.com/ymt200120/arcmenu-pinyin",
     "shell-version": ["45", "46", "47", "48", "49"],
-    "version": 2,
-    "version-name": "1.1.0",
+    "version": 3,
+    "version-name": "1.1.1",
     "session-modes": ["user"]
 }

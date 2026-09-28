@@ -71,17 +71,17 @@ Then use the downloaded archive or the one just built:
 
 ```bash
 # When using a release zip, set ZIP_PATH to its file path
-ZIP_PATH=dist/arcmenu-pinyin-v1.1.0.zip
+ZIP_PATH=dist/arcmenu-pinyin-v1.1.1.zip
 mkdir -p ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
 unzip "$ZIP_PATH" \
   -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
 ```
 
-`scripts/build.sh` also writes `dist/arcmenu-pinyin-v1.1.0.zip.sha256` for a local build. To verify it from the output directory:
+`scripts/build.sh` also writes `dist/arcmenu-pinyin-v1.1.1.zip.sha256` for a local build. To verify it from the output directory:
 
 ```bash
 cd dist
-sha256sum -c arcmenu-pinyin-v1.1.0.zip.sha256
+sha256sum -c arcmenu-pinyin-v1.1.1.zip.sha256
 ```
 
 After extracting, log out and back in first (required on Wayland), then run the `gnome-extensions enable` command above.
@@ -94,7 +94,7 @@ The update command depends on how the extension was installed:
 - From a zip, extract the new archive over the same extension directory. For a locally built archive:
 
   ```bash
-  unzip -o dist/arcmenu-pinyin-v1.1.0.zip \
+  unzip -o dist/arcmenu-pinyin-v1.1.1.zip \
     -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
   ```
 

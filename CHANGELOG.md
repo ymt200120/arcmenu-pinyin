@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased maintenance
+## arcmenu-pinyin 1.1.1（2026-09-29）
 
 - runtime 验证默认使用唯一的 `/tmp/amp-verify.XXXXXX` 目录；显式 `AMP_RUN` 只接受尚不存在的
   `/tmp` 直接子目录，不会清理或覆盖已有路径；

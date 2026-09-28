@@ -71,17 +71,17 @@ scripts/build.sh
 
 ```bash
 # 下载 release zip 时，把 ZIP_PATH 改为该文件的路径
-ZIP_PATH=dist/arcmenu-pinyin-v1.1.0.zip
+ZIP_PATH=dist/arcmenu-pinyin-v1.1.1.zip
 mkdir -p ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
 unzip "$ZIP_PATH" \
   -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
 ```
 
-`scripts/build.sh` 还会为本地构建生成 `dist/arcmenu-pinyin-v1.1.0.zip.sha256`。如需校验，在 `dist/` 目录运行：
+`scripts/build.sh` 还会为本地构建生成 `dist/arcmenu-pinyin-v1.1.1.zip.sha256`。如需校验，在 `dist/` 目录运行：
 
 ```bash
 cd dist
-sha256sum -c arcmenu-pinyin-v1.1.0.zip.sha256
+sha256sum -c arcmenu-pinyin-v1.1.1.zip.sha256
 ```
 
 解压后先注销并重新登录（Wayland 会话必须），然后运行上面的 `gnome-extensions enable` 命令。
@@ -94,7 +94,7 @@ sha256sum -c arcmenu-pinyin-v1.1.0.zip.sha256
 - 只下载或构建 zip：将新 zip 解压覆盖到同一个扩展目录。例如在仓库中构建时：
 
   ```bash
-  unzip -o dist/arcmenu-pinyin-v1.1.0.zip \
+  unzip -o dist/arcmenu-pinyin-v1.1.1.zip \
     -d ~/.local/share/gnome-shell/extensions/arcmenu-pinyin@ymt200120
   ```
 
